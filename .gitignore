@@ -31,7 +31,6 @@ Thumbs.db
 *.trace
 *.stackdump
 *.txt
-log/
 __pycache__/
 *.cache
 *.json.tmp
