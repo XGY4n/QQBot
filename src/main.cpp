@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     QQBot* bot = nullptr;
 
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " ./ini/GroupName.ini" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " ./ini/BotSetting.ini" << std::endl;
         bot = new QQBot(); 
     }
     else {

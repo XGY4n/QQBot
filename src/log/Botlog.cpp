@@ -23,7 +23,6 @@ bool Botlog::isFileExists_fopen(std::string& name)//creat file
         fclose(file);
         return true;
     }
-
 }
 
 
