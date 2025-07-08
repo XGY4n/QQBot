@@ -7,6 +7,7 @@
 #include <Parser.h>
 #include <factories/ParserFactory.h>
 #include <Executor.h>
+#include <Bus/EventBusInstance.h>
 class QQBot {
 public:
     QQBot();
@@ -22,12 +23,14 @@ private:
     void setupMessageProcessingPipeline(); 
     void setupExecutorPipeline();
     bool ReadBotConfig();
+    void watchEventBus();
+
 private:
     Botlog* _logger = Botlog::GetInstance();
     std::string _groupName;
     HWND _mainGroup;
 	HWND _msgCenter;
     std::string _symbol;
-    std::unique_ptr<Parser> _msgParser;
+    std::unique_ptr<Parser> _parser;
 	std::unique_ptr<Executor<QMessage>> _executor;
 };

@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <Botlog.h>
 #include <interface/IUIAWindowController.h>
+#include <Bus/EventBusInstance.h>
 class UIAWindowController : public IUIAWindowController {
 public:
     explicit UIAWindowController(HWND hwnd);

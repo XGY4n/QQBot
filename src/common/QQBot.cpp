@@ -12,6 +12,19 @@ QQBot::QQBot()
 	}
 	_executor = std::make_unique<Executor<QMessage>>();
 	ReadBotConfig();
+	watchEventBus();
+
+}
+
+void QQBot::watchEventBus() 
+{
+	EventBusInstance::instance().subscribe<WindowLostEvent>(
+		[this](const WindowLostEvent& event) {
+			_logger->LOG_ERROR_SELF("Window lost from: " + event.componentName);
+			_parser->stop();
+			setupMessageProcessingPipeline();
+		});
+
 }
 
 QQBot::QQBot(std::string Configpath)
@@ -38,24 +51,29 @@ bool QQBot::WaitGroup()
 	{
 		bool mainGroupReady = false;
 		bool msgCenterReady = false;
-
-		if (_mainGroup != 0)
-		{
-			mainGroupReady = true;
-			tempg = "Ready";
-		}
-
+		_mainGroup = FindWindow(_T("TXGuiFoundation"), multi_Byte_To_Wide_Char(_groupName));
 		_msgCenter = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
-		if (_msgCenter != 0)
-		{
-			msgCenterReady = true;
-			tempc = "Ready";
-		}
+
+		//if (_mainGroup != 0)
+		//{
+		//	mainGroupReady = true;
+		//	tempg = "Ready";
+		//}
+
+		//if (_msgCenter != 0)
+		//{
+		//	msgCenterReady = true;
+		//	tempc = "Ready";
+		//}
+		mainGroupReady = (_mainGroup != 0);
+		tempg = mainGroupReady ? "Ready" : "Not Ready";
+
+		msgCenterReady = (_msgCenter != 0);
+		tempc = msgCenterReady ? "Ready" : "Not Ready";
 
 		char buffer[128];
 		snprintf(buffer, sizeof(buffer), "Group: %-7s|MessageCenter: %-7s", tempg.c_str(), tempc.c_str());
 		_logger->cmdlog_inline(Botlog::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, std::string(buffer));
-		_mainGroup = FindWindow(_T("TXGuiFoundation"), multi_Byte_To_Wide_Char(_groupName));
 
 		if (mainGroupReady && msgCenterReady)
 		{
@@ -117,8 +135,8 @@ void QQBot::setupMessageProcessingPipeline()
 {
 	if (WaitGroup())
 	{
-		_msgParser = ParserFactory::Create(_msgCenter, _symbol);
-		_msgParser->SetMessageCallback([this](const QMessage msg)
+		_parser = ParserFactory::Create(_msgCenter, _symbol);
+		_parser->SetMessageCallback([this](const QMessage msg)
 		{
 			if (_executor) 
 			{
@@ -129,7 +147,7 @@ void QQBot::setupMessageProcessingPipeline()
 				_logger->LOG_ERROR_SELF("Executor is not initialized.");
 			}
 		});
-		_msgParser->start();
+		_parser->start();
 	}
 }
 

@@ -20,6 +20,11 @@ void UIAWindowController::RefreshMsg()
 
 void UIAWindowController::SimulateClick(int x, int y)
 {
+	if (!IsWindow(_hwnd))
+	{
+		EventBusInstance::instance().publish(WindowLostEvent{ std::to_string(int(_hwnd))});
+		return;
+	}
 	LPARAM lParam = MAKELPARAM(x, y);
 	PostMessage(_hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lParam);
 	Sleep(50);
