@@ -85,21 +85,22 @@ HRESULT UIAQQMessageExporter::ProcessUIAElement(IUIAutomationElement* pItemEleme
     if (SUCCEEDED(hr) && bstrName != nullptr)
     {
         std::string str = ConvertBSTRToString(bstrName);
-        if (!str.empty()) // 仅当转换成功且字符串不为空时才处理
+        SysFreeString(bstrName); // release BSTR 
+
+        if (!str.empty())
         {
             if (lastStr == str)
             {
                 debug_list_items.clear(); 
+				return S_OK; 
             }
             debug_list_items.push_back(str);
         }
-        SysFreeString(bstrName); // 释放 BSTR 内存
     }
     return hr;
 }
 
-// UIAQQMessageExporter 类的成员函数
-std::vector<std::string> UIAQQMessageExporter::GetQQMessageList()
+std::vector<std::string> UIAQQMessageExporter::GetQQMessages()
 {
     std::vector<std::string> debug_list_items;
 
@@ -143,26 +144,45 @@ std::vector<std::string> UIAQQMessageExporter::GetQQMessageList()
     return debug_list_items;
 }
 
-std::vector<std::string> UIAQQMessageExporter::GetQQMessages()
-{
-    return GetQQMessageList();
-}
-
-//std::string UIAQQMessageExporter::GetQQMessage()
-//{
-//    std::lock_guard<std::mutex> lock(_windowMutex);
-//
-//    if (_window.empty()) {
-//        return "N/A"; 
-//    }
-//
-//    std::string msg = _window.front();  
-//    _window.pop_front(); 
-//    return msg;
-//}
-
 std::string UIAQQMessageExporter::GetQQMessage()
 {
+    if (HandleFirstMessage())
+        return lastStr;
+
+    return PopMessage();
+}
+
+bool UIAQQMessageExporter::HandleFirstMessage()
+{
+    std::lock_guard<std::mutex> lock(_windowMutex);
+
+    if (_firstTime)
+    {
+        std::string tempstr = GetQQMessagesLastOne(); 
+        _firstTime = false;
+        lastStr = tempstr;
+        return true;
+    }
+    return false;
+}
+
+std::string UIAQQMessageExporter::PopMessage()
+{
+    std::lock_guard<std::mutex> lock(_windowMutex);
+
+    if (_window.empty()) {
+        return "N/A";
+    }
+
+    std::string msg = _window.front();
+    _window.pop_front();
+    return msg;
+}
+
+
+std::string UIAQQMessageExporter::GetQQMessagesLastOne()
+{
+    //std::lock_guard<std::mutex> lock(_windowMutex);
     std::string error = "error";
     if (pListElement != NULL)
     {

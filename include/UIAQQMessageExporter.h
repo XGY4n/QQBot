@@ -19,7 +19,6 @@ public:
     ~UIAQQMessageExporter();
 public:
     std::string GetQQMessage();
-    std::vector<std::string> GetQQMessageList();
     std::vector<std::string> GetQQMessages();
 public:
     IUIAutomationElement* pRootElement;
@@ -33,9 +32,13 @@ public:
 private :
     HRESULT ProcessUIAElement(IUIAutomationElement* pItemElement, std::vector<std::string>& debug_list_items);
     std::string ConvertBSTRToString(BSTR bstr);
+    std::string GetQQMessagesLastOne();
+    std::string PopMessage();
+    bool HandleFirstMessage();
 
     std::mutex _windowMutex;
     std::string lastStr;
     std::deque<std::string> _window;
+    bool _firstTime = true;
 };
 
