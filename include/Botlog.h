@@ -297,9 +297,29 @@ public:
     }
 
     template<typename CharT>
+    Botlog::Logstat cmdlog_inline(Botlog::Level lev, Botlog::Owner own, const std::basic_string<CharT>& msg)
+    {
+        alignas(16) std::basic_ostream<CharT>& out = getOutputStream<CharT>();
+        const std::locale utf8_locale = std::locale(std::locale(), new std::codecvt_utf8<wchar_t>());
+
+        std::ostringstream oss;
+        oss << _INFO
+            << lev_section[lev]
+            << own_section[own]
+            << Now_time()
+            << _MIDCUT
+            << msg;
+
+            std::string final_line = oss.str();
+
+            std::cout << "\r" << final_line << std::string(95 - final_line.length(), ' ') << std::flush;
+
+            return LOG_WRITE_SUCCESS;
+    }
+
+    template<typename CharT>
     Botlog::Logstat cmdlog(Botlog::Level lev, Botlog::Owner own, std::basic_string<CharT>& msg)
     {
-        std::string infopath = this->logpath + Days() + ".log";
         alignas(16) std::basic_ostream<CharT>& out = getOutputStream<CharT>();
         const std::locale utf8_locale = std::locale(std::locale(), new std::codecvt_utf8<wchar_t>());
         // cmd ptint

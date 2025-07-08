@@ -29,40 +29,48 @@ QQBot::QQBot(std::string Configpath)
 
 bool QQBot::WaitGroup()
 {
-	std::string tempg = "GroupWindow";
-	std::string tempc = "MessageCenter";
+	std::string tempg = "waiting";
+	std::string tempc = "waiting";
+
+	_logger->LOG_SUCCESS_SELF("Attach QQGroup : " + _groupName);
 
 	while (true)
 	{
-		_logger->LOG_SUCCESS_SELF("Attch QQGroup : " + _groupName);
+		bool mainGroupReady = false;
+		bool msgCenterReady = false;
 
-		_mainGroup = FindWindow(_T("TXGuiFoundation"), multi_Byte_To_Wide_Char(_groupName));
 		if (_mainGroup != 0)
 		{
-			tempg = "";
+			mainGroupReady = true;
+			tempg = "Ready";
 		}
 
 		_msgCenter = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
 		if (_msgCenter != 0)
 		{
-			tempc = "";
+			msgCenterReady = true;
+			tempc = "Ready";
 		}
 
-		if (_mainGroup != 0 && _msgCenter != 0)
+		char buffer[128];
+		snprintf(buffer, sizeof(buffer), "Group: %-7s|MessageCenter: %-7s", tempg.c_str(), tempc.c_str());
+		_logger->cmdlog_inline(Botlog::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, std::string(buffer));
+		_mainGroup = FindWindow(_T("TXGuiFoundation"), multi_Byte_To_Wide_Char(_groupName));
+
+		if (mainGroupReady && msgCenterReady)
 		{
 			SetForegroundWindow(_mainGroup);
-			_logger->LOG_SUCCESS_SELF(std::string("---Bot online---"));
-			Sleep(1000);
+			std::cout << std::endl;
+			_logger->LOG_SUCCESS_SELF("---Bot online---");
 			return true;
 		}
 
-		_logger->LOG_SUCCESS_SELF("waiting - " + tempg + " " + tempc);
-		Sleep(1000);
-		system("cls");
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
 	return false;
 }
+
 
 void QQBot::run()
 {
