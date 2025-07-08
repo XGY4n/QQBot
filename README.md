@@ -26,6 +26,7 @@ The project uses several INI configuration files that need to be set up:
 - **PythonTask.ini**  
   Specify the Python tasks to be executed by the bot.
 
+move ini/ to /build & build Debug
 ---
 
 ### 3. Build and Run the Project

@@ -27,7 +27,6 @@ install_manifest.txt
 .DS_Store
 Thumbs.db
 *.log
-*.ini
 *.trace
 *.stackdump
 __pycache__/

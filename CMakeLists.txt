@@ -40,9 +40,7 @@ add_custom_command(TARGET QQBot POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${DLL_DIR}/python39.dll" ${OUT_DIR1}
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PYTHON_DIR}" "${OUT_DIR1}/Python"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${INI_DIR}" "${OUT_DIR1}/ini" 
+        "${PYTHON_DIR}" "${OUT_DIR1}/Python" 
     # --- cp build/ ---
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${DLL_DIR}/python3.dll" ${OUT_DIR2}
@@ -50,8 +48,6 @@ add_custom_command(TARGET QQBot POST_BUILD
         "${DLL_DIR}/python39.dll" ${OUT_DIR2}
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${PYTHON_DIR}" "${OUT_DIR2}/Python"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${INI_DIR}" "${OUT_DIR2}/ini"
     COMMENT "Copying runtime files to build/Debug and build/"
 )
 
