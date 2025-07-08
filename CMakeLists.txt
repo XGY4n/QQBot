@@ -5,52 +5,53 @@ project(QQBot VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-
-set(PYTHON_DIR "${CMAKE_SOURCE_DIR}/Python")  
+set(PYTHON_DIR "${CMAKE_SOURCE_DIR}/Python")
 set(DLL_DIR "${CMAKE_SOURCE_DIR}/dll")
 
 set(INI_DIR "${CMAKE_SOURCE_DIR}/ini")
-set(OUT_DIR1 "$<TARGET_FILE_DIR:QQBot>") # build/Debug/
-set(OUT_DIR2 "${CMAKE_BINARY_DIR}")  # build
+
+cmake_host_system_information(RESULT CPU_NUMBER_OF_LOGICAL_CORES QUERY NUMBER_OF_LOGICAL_CORES)
+message(STATUS "Number of logical CPU cores: ${CPU_NUMBER_OF_LOGICAL_CORES}")
 
 include_directories(
     "${CMAKE_SOURCE_DIR}/include"
     "D:/workspace/Python/Python39/include"
 )
-link_directories("${CMAKE_SOURCE_DIR}/libs")
 
+link_directories("${CMAKE_SOURCE_DIR}/libs")
 
 add_definitions(-D_WINSOCKAPI_)
 add_definitions(-D_CLASS_LOG_)
-
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.h" "include/*.hpp" "src/*.h")
 
 add_executable(QQBot ${SOURCES} ${HEADERS})
+source_group(TREE "${CMAKE_SOURCE_DIR}/include" PREFIX "Header Files" FILES ${HEADERS})
+
 target_compile_definitions(QQBot PRIVATE UNICODE _UNICODE)
+
 target_link_libraries(QQBot
-    "python39_d.lib"  
+    "python39_d.lib"
+)
+
+if(CPU_NUMBER_OF_LOGICAL_CORES)
+  target_compile_options(QQBot PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/MP${CPU_NUMBER_OF_LOGICAL_CORES}>)
+endif()
+
+target_compile_options(QQBot PRIVATE
+    $<$<CONFIG:Debug>:/ZI>
 )
 
 add_custom_command(TARGET QQBot POST_BUILD
-    # ---cp build/Debug/ ---
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${DLL_DIR}/python3.dll" ${OUT_DIR1}
+        "${DLL_DIR}/python3.dll" "$<TARGET_FILE_DIR:QQBot>"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${DLL_DIR}/python39.dll" ${OUT_DIR1}
+        "${DLL_DIR}/python39.dll" "$<TARGET_FILE_DIR:QQBot>"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PYTHON_DIR}" "${OUT_DIR1}/Python" 
-    # --- cp build/ ---
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${DLL_DIR}/python3.dll" ${OUT_DIR2}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${DLL_DIR}/python39.dll" ${OUT_DIR2}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PYTHON_DIR}" "${OUT_DIR2}/Python"
-    COMMENT "Copying runtime files to build/Debug and build/"
+        "${PYTHON_DIR}" "$<TARGET_FILE_DIR:QQBot>/Python"
+    COMMENT "Copying runtime files to output directory"
 )
-
 
 foreach(source_file ${SOURCES} ${HEADERS})
     file(RELATIVE_PATH rel_path "${CMAKE_SOURCE_DIR}" "${source_file}")
