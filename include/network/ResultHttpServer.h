@@ -1,5 +1,6 @@
 #include <network/httplib.h>
 #include <network/HttpServerAdapter.h>
+#include <Bus/EventBusInstance.h>
 
 
 class ResultHttpServer {

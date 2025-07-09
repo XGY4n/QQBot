@@ -11,6 +11,8 @@
 #include <TaskRunner.h>
 #include <thread>
 #include <nlohmann/json.hpp>
+#include <Bus/EventBusInstance.h>
+
 class ServiceManager 
 {
     enum Type
@@ -26,6 +28,7 @@ class ServiceManager
 		int heartbeatPort;
 		Type taskType = Short;
         PythonTaskRunner::PyReturnType returnType;
+        std::chrono::steady_clock::time_point lastHeartbeatTime;
         PythonTaskRunner::ServiceCallbackInfo callback; 
     };
 
@@ -36,12 +39,20 @@ public:
     void start();
     void stop();
 	void RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask);//PythonTaskRunner::PythonServiceCallbackInfo ServiceTask
-    void ReleassTask(std::string body);
+    void HandleTaskRev(std::string body);
+    void MonitorTasks();
+    void UpdateTaskrevTime(std::string body);
+    void ReleaseTask(std::string uuid);
+
 private:
     Botlog* _logger = Botlog::GetInstance();
 	std::map<std::string, HttpTaskInfo> _TaskMapping;
     std::unique_ptr<httplib::Server> server_ptr; 
     std::thread server_thread;
     std::unique_ptr<ResultHttpServer> _resultServer;
+    std::unique_ptr<HeartbeatTask> _heartbeatTask;
+    std::atomic<bool> _running{ false };
+    std::mutex _taskMapMutex;
+    std::thread _monitorThread;
 
 };

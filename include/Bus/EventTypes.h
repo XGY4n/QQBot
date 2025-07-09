@@ -1,8 +1,15 @@
 #pragma once
 #include <string>
 
-struct WindowLostEvent {
+struct WindowLostEvent 
+{
     std::string componentName;
 };
 
+struct HeartbeatHttpCb
+{
+    std::string body;
+};
+
 struct ShutdownEvent {};
+

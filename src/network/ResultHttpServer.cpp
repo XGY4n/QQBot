@@ -7,6 +7,8 @@ ResultHttpServer::ResultHttpServer()
 ResultHttpServer::~ResultHttpServer()
 {
     stop();
+    if (_serverThread.joinable())
+        _serverThread.join();
 }
 
 void ResultHttpServer::setupRoutes()
@@ -19,6 +21,12 @@ void ResultHttpServer::setupRoutes()
             onReportPostCallback_(req.body);  // 把数据传回 ServiceManager
         }
         res.set_content("POST /report OK", "text/plain");
+    });
+    _adapter->addRoute_POST("/health", [this](const httplib::Request& req, httplib::Response& res) {
+        //_logger->LOG_SUCCESS_SELF("Received POST /health request.");
+        EventBusInstance::instance().publish(HeartbeatHttpCb{ req.body });
+
+        res.set_content("POST /health OK", "text/plain");
     });
 }
 

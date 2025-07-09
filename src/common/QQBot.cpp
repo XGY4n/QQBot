@@ -22,6 +22,7 @@ void QQBot::watchEventBus()
 		[this](const WindowLostEvent& event) {
 			_logger->LOG_ERROR_SELF("Window lost from: " + event.componentName);
 			_parser->stop();
+			_parser.reset();
 			setupMessageProcessingPipeline();
 		});
 
@@ -42,8 +43,8 @@ QQBot::QQBot(std::string Configpath)
 
 bool QQBot::WaitGroup()
 {
-	std::string tempg = "waiting";
-	std::string tempc = "waiting";
+	std::string tempg;
+	std::string tempc;
 
 	_logger->LOG_SUCCESS_SELF("Attach QQGroup : " + _groupName);
 
@@ -54,17 +55,6 @@ bool QQBot::WaitGroup()
 		_mainGroup = FindWindow(_T("TXGuiFoundation"), multi_Byte_To_Wide_Char(_groupName));
 		_msgCenter = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
 
-		//if (_mainGroup != 0)
-		//{
-		//	mainGroupReady = true;
-		//	tempg = "Ready";
-		//}
-
-		//if (_msgCenter != 0)
-		//{
-		//	msgCenterReady = true;
-		//	tempc = "Ready";
-		//}
 		mainGroupReady = (_mainGroup != 0);
 		tempg = mainGroupReady ? "Ready" : "Not Ready";
 
@@ -73,7 +63,7 @@ bool QQBot::WaitGroup()
 
 		char buffer[128];
 		snprintf(buffer, sizeof(buffer), "Group: %-7s|MessageCenter: %-7s", tempg.c_str(), tempc.c_str());
-		_logger->cmdlog_inline(Botlog::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, std::string(buffer));
+		_logger->cmdlog_inline(Botlog::LEVEL_SUCCESS, Botlog::OWNER_SELF, std::string(buffer));
 
 		if (mainGroupReady && msgCenterReady)
 		{

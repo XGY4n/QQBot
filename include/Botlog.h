@@ -19,12 +19,11 @@
 #include <codecvt>
 #include <iterator>
 #include <mutex>
-
-//#define LOG(level, owner, message) Botlog::Record(level, owner, message)GetInstance()->
+//+ typeid(*this).name()+ "::"
 #ifdef _CLASS_LOG_
 #define LOG(level, owner, message) \
         Botlog::Record(level, owner, \
-        std::string("[") + typeid(*this).name() + "::" + __FUNCTION__ + "] " + message)
+        std::string("[") + __FUNCTION__ + "] " + message)
 #else
 #define LOG(level, owner, message) Botlog::Record(level, owner, message)
 #endif

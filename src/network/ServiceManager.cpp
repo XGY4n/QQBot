@@ -9,12 +9,44 @@ ServiceManager::ServiceManager(std::string reportUrl)
 
 ServiceManager::ServiceManager()
 {
-    _resultServer = std::make_unique<ResultHttpServer>();
+    _logger->LOG_SUCCESS_SELF("Initializing ServiceManager...");
+
+    try 
+    {
+        _resultServer = std::make_unique<ResultHttpServer>();
+        _logger->LOG_SUCCESS_SELF("ResultHttpServer initialized.");
+
+        _running = true;
+
+        _monitorThread = std::thread(&ServiceManager::MonitorTasks, this);
+        _monitorThread.detach();
+        _logger->LOG_SUCCESS_SELF("Monitor thread started.");
+		_heartbeatTask = std::make_unique<HeartbeatTask>();
+
+        EventBusInstance::instance().subscribe<HeartbeatHttpCb>(
+            [this](const HeartbeatHttpCb& event) {
+                try {
+                    UpdateTaskrevTime(event.body);
+                }
+                catch (const std::exception& e) {
+                    _logger->LOG_ERROR_SELF("Exception in HeartbeatHttpCb handler: " + std::string(e.what()));
+                }
+            });
+
+        _logger->LOG_SUCCESS_SELF("Event subscription complete.");
+
+    }
+    catch (const std::exception& e) {
+        _logger->LOG_ERROR_SELF("Exception during ServiceManager initialization: " + std::string(e.what()));
+        throw; 
+    }
+
+    _logger->LOG_SUCCESS_SELF("ServiceManager initialized successfully.");
 }
 
 ServiceManager::~ServiceManager()
 {
-    // Destructor implementation here
+
 }
 
 void ServiceManager::start()
@@ -23,11 +55,14 @@ void ServiceManager::start()
     {
         _logger->LOG_SUCCESS_SELF("ServiceManager::start() called. Starting HTTP server thread...");
 
-        _resultServer->setupRoutes();  // 注册所有路由
+        _resultServer->setupRoutes();  
         _resultServer->start();
         _resultServer->setReportPostCallback([this](const std::string& body) {
-            ReleassTask(body);
+            HandleTaskRev(body);
         });
+        _logger->LOG_SUCCESS_SELF("HTTP server started successfully.");
+        _logger->LOG_SUCCESS_SELF("Starting HTTP client HeartbeatTask thread...");
+        _heartbeatTask->start();
         _logger->LOG_SUCCESS_SELF("HTTP server started successfully.");
     }
     catch (const std::exception& ex)
@@ -56,7 +91,17 @@ void ServiceManager::stop()
     else {
         _logger->LOG_SUCCESS_SELF("HTTP server thread was not joinable (possibly detached or already finished).");
     }
+    if (!_running) return;
+    _logger->LOG_SUCCESS_SELF("Stopping ServiceManager monitor thread...");
+
+    _running = false; // 通知线程退出
+
+    if (_monitorThread.joinable()) {
+        _monitorThread.join(); // 等待线程结束
+    }
+    _logger->LOG_SUCCESS_SELF("ServiceManager monitor thread stopped.");    
     _logger->LOG_SUCCESS_SELF("ServiceManager::stop() finished.");
+
 }
 
 void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask)
@@ -70,6 +115,7 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
 	httpTask.reportUrl = ServiceTask.reportUrl;
     httpTask.returnType = ServiceTask.returnType;
     httpTask.heartbeatPort = ServiceTask.heartbeat_port;
+    httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
     _TaskMapping.insert({ ServiceTask.task_uuid, httpTask});
     _logger->LOG_SUCCESS_SELF("Task with ID " + std::to_string(ServiceTask.pId) + " registered successfully.");
 }
@@ -80,16 +126,13 @@ bool GetProcessHANDLE(DWORD pid, HANDLE& pHANDLE)
     pHANDLE = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE, FALSE, pid);
     if (!pHANDLE)
     {
-        // 可以选择在这里记录错误，或者让调用者处理
         return false;
     }
     return true;
 }
 
-void ServiceManager::ReleassTask(std::string body)
+void ServiceManager::ReleaseTask(std::string uuid)
 {
-    nlohmann::json j = nlohmann::json::parse(body);
-    std::string uuid = j["task_uuid"].get<std::string>();
     auto TaskInfo = _TaskMapping.find(uuid);
 
     if (TaskInfo == _TaskMapping.end())
@@ -99,26 +142,70 @@ void ServiceManager::ReleassTask(std::string body)
     }
 
     HANDLE pHANDLE = NULL;
-    DWORD processId = TaskInfo->second.pId; // 获取正确的 PID
+    DWORD processId = TaskInfo->second.pId;
 
     if (GetProcessHANDLE(processId, pHANDLE))
     {
-        // 打印正确的 PID
         _logger->LOG_SUCCESS_SELF("PID " + std::to_string(processId) + " is still active. Attempting to terminate.");
         if (!TerminateProcess(pHANDLE, 1))
         {
             _logger->LOG_ERROR_SELF("Failed to terminate PID " + std::to_string(processId) + ". Error: " + std::to_string(GetLastError()));
         }
-        CloseHandle(pHANDLE); // 关闭进程句柄以避免泄漏
+        CloseHandle(pHANDLE);
     }
     else
     {
         _logger->LOG_SUCCESS_SELF("PID " + std::to_string(processId) + " is not active or could not be opened. Assuming it's done.");
     }
-
-    _TaskMapping.erase(uuid);
     _logger->LOG_SUCCESS_SELF("Released task uuid : " + uuid);
 }
 
 
+void ServiceManager::HandleTaskRev(std::string body)
+{
+    nlohmann::json j = nlohmann::json::parse(body);
+    std::string uuid = j["task_uuid"].get<std::string>();
+    ReleaseTask(uuid);
+}
 
+
+void ServiceManager::MonitorTasks() {
+    while (_running) 
+    {
+        auto now = std::chrono::steady_clock::now();
+        {
+            std::lock_guard<std::mutex> lock(_taskMapMutex);
+            for (auto it = _TaskMapping.begin(); it != _TaskMapping.end(); ) 
+            {
+                auto duration = std::chrono::duration_cast<std::chrono::seconds>(
+                    now - it->second.lastHeartbeatTime).count();
+
+                if (duration > 3) 
+                {  
+                    _logger->LOG_WARNING_SELF("Task " + it->second.task_uuid + " (pid=" + std::to_string(it->second.pId) + ") is unresponsive. Killing...");
+
+                    ReleaseTask(it->second.task_uuid);
+                    it = _TaskMapping.erase(it);
+                    continue;
+                }
+                else 
+                {
+                    _heartbeatTask->sendHeartbeat(it->second.task_uuid, it->second.heartbeatPort);
+                }
+                ++it;
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
+void ServiceManager::UpdateTaskrevTime(std::string body)
+{
+    nlohmann::json j = nlohmann::json::parse(body);
+    std::string uuid = j["uuid"].get<std::string>();
+    auto it = _TaskMapping.find(uuid);
+    if (it != _TaskMapping.end()) {
+        it->second.lastHeartbeatTime = std::chrono::steady_clock::now();
+    }
+}

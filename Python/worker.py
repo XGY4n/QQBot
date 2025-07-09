@@ -7,18 +7,47 @@ import threading
 import os
 import datetime
 import QQbot as bot
+import requests
+import signal
+
+TIMEOUT_SECONDS = 10
+heartbeat_timer = None
 
 def write_log(message: str):
     bot.ipc_print(message)
 
+def kill_self():
+    print("[Python] 超过 10 秒未收到 C++ GET 请求，退出进程")
+    os.kill(os.getpid(), signal.SIGTERM)
 
-def start_health_server(port):
+def reset_timer():
+    global heartbeat_timer
+    if heartbeat_timer:
+        heartbeat_timer.cancel()
+    heartbeat_timer = threading.Timer(TIMEOUT_SECONDS, kill_self)
+    heartbeat_timer.start()
+    
+def start_health_server(port, task_uuid):
     class HealthHandler(BaseHTTPRequestHandler):
         def do_GET(self):
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"OK")
-    HTTPServer(("0.0.0.0", port), HealthHandler).serve_forever()
+            try:
+                reset_timer()
+                payload = {'uuid': task_uuid}
+                resp = requests.post("http://127.0.0.1:11451/health", json=payload)
+                
+                self.send_response(resp.status_code)
+                self.send_header("Content-type", "text/plain")
+                self.end_headers()
+                self.wfile.write(resp.content)
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(f"Error: {e}".encode('utf-8'))
+        def log_message(self, format, *args):
+            pass
+        
+    reset_timer()
+    HTTPServer(("0.0.0.0", port), HealthHandler).serve_forever() 
 
 def main():
     write_log("into ""worker.py main()")
@@ -47,7 +76,7 @@ def main():
     else:
         write_log("未提供 report_url，未初始化 QQBotSDK")
 
-    threading.Thread(target=start_health_server, args=(port,), daemon=True).start()
+    threading.Thread(target=start_health_server, args=(port,task_uuid,), daemon=True).start()
     write_log(f"启动心跳服务线程，端口: {port}")
 
     script_dir = os.path.dirname(args.get("script_path", {}))

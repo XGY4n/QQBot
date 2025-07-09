@@ -1,5 +1,16 @@
-//class HttpClientAdapter {
-//public:
-//    HttpResponse post(const std::string& url, const std::string& body);
-//    HttpResponse get(const std::string& url);
-//};
+#pragma once
+
+#include <memory>
+#include <string>
+#include "httplib.h"
+#include <Botlog.h>
+
+class HttpClientAdapter {
+public:
+    HttpClientAdapter();
+
+    void sendHeartbeatTask(int port);
+
+private:
+    Botlog* _logger = Botlog::GetInstance();
+};
