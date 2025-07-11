@@ -34,8 +34,43 @@ UIAQQMessageExporter::UIAQQMessageExporter()
 
 UIAQQMessageExporter::~UIAQQMessageExporter()
 {
-    pRootElement->Release();
-    pAutomation->Release();
+    //pRootElement->Release();
+    //pAutomation->Release();
+    if (pRootElement) {
+        pRootElement->Release();
+        pRootElement = nullptr;
+    }
+    if (pAutomation) {
+        pAutomation->Release();
+        pAutomation = nullptr;
+    }
+    if (pNameCondition) {
+        pNameCondition->Release();
+        pNameCondition = nullptr;
+    }
+    if (pAndCondition) {
+        pAndCondition->Release();
+        pAndCondition = nullptr;
+    }
+    if (pClassNameCondition) {
+        pClassNameCondition->Release();
+        pClassNameCondition = nullptr;
+    }
+    if (pCondition) {
+        pCondition->Release();
+        pCondition = nullptr;
+    }
+    if (pListElement) {
+        pListElement->Release();
+        pListElement = nullptr;
+    }
+    if (pWindow) {
+        pWindow->Release();
+        pWindow = nullptr;
+    }
+
+    std::lock_guard<std::mutex> lock(_windowMutex);
+    _window.clear();
     CoUninitialize();
 }
 

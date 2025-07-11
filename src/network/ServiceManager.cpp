@@ -50,11 +50,11 @@ ServiceManager::~ServiceManager()
 }
 
 void ServiceManager::start()
-{    
+{            
+    _logger->LOG_SUCCESS_SELF("ServiceManager::start() called. Starting HTTP server thread...");
+
     try
     {
-        _logger->LOG_SUCCESS_SELF("ServiceManager::start() called. Starting HTTP server thread...");
-
         _resultServer->setupRoutes();  
         _resultServer->start();
         _resultServer->setReportPostCallback([this](const std::string& body) {

@@ -8,8 +8,8 @@
 class MessageFetcher: public IMessageFetcher {
 public:
     MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* windowController);
-    MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* windowController, std::unique_ptr<IQQMessageExporter> messageExporter); 
-
+    //MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* windowController, std::unique_ptr<IQQMessageExporter> messageExporter); 
+    MessageFetcher(std::unique_ptr<IQMsgFormatter> formatter, std::unique_ptr <IUIAWindowController> windowController, std::unique_ptr<IQQMessageExporter> MessageExporterm);
     ~MessageFetcher();
 
     void start();
@@ -31,8 +31,10 @@ private:
 
 private:
     std::unique_ptr<IQQMessageExporter> _msgExporter;  // ´æ´¢ËùÓÐÈ¨
-    IQMsgFormatter* _formatter;
-    IUIAWindowController* _windowController;
+    std::unique_ptr<IQMsgFormatter> _formatter;
+    std::unique_ptr<IUIAWindowController> _windowController;
+    //IQMsgFormatter* _formatter;
+    //IUIAWindowController* _windowController;
 
     Botlog* _logger = Botlog::GetInstance();
 

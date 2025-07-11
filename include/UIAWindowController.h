@@ -8,10 +8,10 @@ public:
     explicit UIAWindowController(HWND hwnd);
     void MoveWindowOffScreen();
 	~UIAWindowController();
-    void RefreshMsg();
+    bool RefreshMsg();
     HWND GetWindow() const;
 private:    
-    void SimulateClick(int x, int y);
+    bool SimulateClick(int x, int y);
 
     Botlog* _logger = Botlog::GetInstance();
 

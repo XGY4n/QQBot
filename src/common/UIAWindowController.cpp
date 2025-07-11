@@ -12,24 +12,24 @@ UIAWindowController:: ~UIAWindowController() {
 	}
 }
 
-void UIAWindowController::RefreshMsg()
+bool UIAWindowController::RefreshMsg()
 {
-	SimulateClick(646, 113);
+	return SimulateClick(646, 113);
 }
 
 
-void UIAWindowController::SimulateClick(int x, int y)
+bool UIAWindowController::SimulateClick(int x, int y)
 {
 	if (!IsWindow(_hwnd))
 	{
-		EventBusInstance::instance().publish(WindowLostEvent{ std::to_string(int(_hwnd))});
-		return;
+		return false;
 	}
 	LPARAM lParam = MAKELPARAM(x, y);
 	PostMessage(_hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lParam);
 	Sleep(50);
 	PostMessage(_hwnd, WM_LBUTTONUP, 0, lParam);
 	Sleep(50);
+	return true;
 }
 
 HWND UIAWindowController::GetWindow() const

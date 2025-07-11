@@ -8,6 +8,7 @@
 #include <factories/ParserFactory.h>
 #include <Executor.h>
 #include <Bus/EventBusInstance.h>
+#include <future>
 class QQBot {
 public:
     QQBot();
@@ -33,4 +34,6 @@ private:
     std::string _symbol;
     std::unique_ptr<Parser> _parser;
 	std::unique_ptr<Executor<QMessage>> _executor;
+    std::future<void> _reinitializationTask;
+    std::mutex _reinitializationTaskMutex;
 };

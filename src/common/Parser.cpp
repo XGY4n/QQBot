@@ -48,6 +48,44 @@
 //        _logger->LOG_SUCCESS_SELF("Parser constructed successfully.");
 //    }
 //}
+Parser::Parser(//DI
+    std::unique_ptr<IMessageFetcher> fetcher,
+    std::string Symbol 
+)  :  _fetcher(std::move(fetcher))
+{
+    if (!_fetcher) {
+        throw std::invalid_argument("Parser: IMessageFetcher is null.");
+    }
+
+    // ¼ì²é Symbol ÊÇ·ñÎª¿Õ
+    if (_markSymbol.empty()) {
+        if (_logger) {
+            _logger->LOG_WRITE_ERR("Parser: Symbol is empty.");
+        }
+    }
+    try {
+        _fetcher->SetMessageCallback([this](const QMessage msg) {
+            try {
+                this->OnFetcherMessage(msg);
+            }
+            catch (const std::exception& e) {
+                if (_logger) {
+                    _logger->LOG_ERROR_SELF("Exception in OnFetcherMessage: %s", e.what());
+                }
+            }
+            });
+    }
+    catch (const std::exception& e) {
+        if (_logger) {
+            _logger->LOG_ERROR_SELF("Failed to set fetcher callback: %s", e.what());
+        }
+        throw;
+    }
+    if (_logger) {
+        _logger->LOG_SUCCESS_SELF("Parser constructed successfully (DI).");
+    }
+}
+
 
 Parser::Parser(
     std::unique_ptr<IQMsgFormatter> formatter,
@@ -116,16 +154,18 @@ Parser::Parser(
         throw;
     }
 }
+
 void Parser::OnFetcherMessage(const QMessage msg) {
     if (_msgCallback) _msgCallback(msg);
 }
+
 void Parser::SetMessageCallback(MessageCallback cb) {
     _msgCallback = std::move(cb);
 }
 
 Parser::~Parser()
 {
-
+    stop();
 }
 
 bool Parser::SetParserMarkSymbol(std::string Symbols)
@@ -178,6 +218,7 @@ void Parser::start()
 
 void Parser::stop()
 {
-
+    _fetcher->stop();
+    _logger->LOG_SUCCESS_SELF("fetcher stop done");
 }
 

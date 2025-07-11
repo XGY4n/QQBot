@@ -21,9 +21,20 @@ void QQBot::watchEventBus()
 	EventBusInstance::instance().subscribe<WindowLostEvent>(
 		[this](const WindowLostEvent& event) {
 			_logger->LOG_ERROR_SELF("Window lost from: " + event.componentName);
-			_parser->stop();
-			_parser.reset();
-			setupMessageProcessingPipeline();
+			std::lock_guard<std::mutex> lock(_reinitializationTaskMutex);
+			if (_reinitializationTask.valid() &&
+				_reinitializationTask.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+				_logger->LOG_WARNING_SELF("Reinitialization task already running, ignoring this event.");
+				return;
+			}
+			// Launch async task
+			_reinitializationTask = std::async(std::launch::async, [this]() {
+				_logger->LOG_SUCCESS_SELF(" Async reinitialization task started.");
+				_parser->stop();
+				_parser.reset();
+				setupMessageProcessingPipeline(); 
+				_logger->LOG_SUCCESS_SELF("Async reinitialization task completed.");
+				});
 		});
 
 }

@@ -7,23 +7,19 @@ std::unique_ptr<Parser> ParserFactory::Create(HWND qmsgWnd, std::string Symbol)
     auto messageExporter = std::make_unique<UIAQQMessageExporter>(); 
 
     auto fetcher = std::make_unique<MessageFetcher>(
-        formatter.get(),
-        windowController.get(),
+        std::move(formatter),
+        std::move(windowController),
 		std::move(messageExporter)
     );
     if (Symbol != "")
     {
         fetcher->SetParserMarkSymbol(Symbol);
         return std::make_unique<Parser>(
-            std::move(formatter),
-            std::move(windowController),
             std::move(fetcher)
         );
     }
     fetcher->SetParserMarkSymbol("#");
     return std::make_unique<Parser>(
-        std::move(formatter),
-        std::move(windowController),
         std::move(fetcher),
         Symbol
     );

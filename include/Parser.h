@@ -20,7 +20,10 @@ class Parser
 			std::unique_ptr<IMessageFetcher> fetcher,
 			std::string Symbol = "#"
 		);
-
+		Parser(//DI
+			std::unique_ptr<IMessageFetcher> fetcher,
+			std::string Symbol = "#"
+		);
 		~Parser();
 
 		using MessageCallback = std::function<void(const QMessage)>;

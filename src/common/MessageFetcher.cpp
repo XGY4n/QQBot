@@ -18,8 +18,9 @@ bool MessageFetcher::SetParserMarkSymbol(std::string Symbols)
     return true;
 }
 
-MessageFetcher::MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* windowController, std::unique_ptr<IQQMessageExporter> MessageExporterm)
-	: _formatter(formatter), _windowController(windowController), _msgExporter(std::move(MessageExporterm))
+//MessageFetcher::MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* windowController, std::unique_ptr<IQQMessageExporter> MessageExporterm)
+MessageFetcher::MessageFetcher(std::unique_ptr<IQMsgFormatter> formatter, std::unique_ptr <IUIAWindowController> windowController, std::unique_ptr<IQQMessageExporter> MessageExporterm)
+	: _formatter(std::move(formatter)), _windowController(std::move(windowController)), _msgExporter(std::move(MessageExporterm))
 {
     _hwnd = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
 
@@ -39,9 +40,9 @@ void MessageFetcher::start()
     if (_fetcherRunning) return;
     _fetcherRunning = true;
     __refThread = std::thread(&MessageFetcher::Refresh, this);
-    __refThread.detach();
+    //__refThread.detach();
     __fetcherThread = std::thread(&MessageFetcher::fetchLoop, this);
-    __fetcherThread.detach();
+    //__fetcherThread.detach();
     _logger->LOG_SUCCESS_SELF("MessageFetcher start...");
 
 }
@@ -54,6 +55,12 @@ void MessageFetcher::stop()
         if (__fetcherThread.joinable()) {
             __fetcherThread.join();
         }
+        if (__refThread.joinable()) {
+            __refThread.join();
+        }        
+        _formatter.reset();
+        _windowController.reset();
+        _msgExporter.reset();
         _logger->LOG_SUCCESS_SELF("MessageFetcher stop");
     }
 }
@@ -62,7 +69,11 @@ void MessageFetcher::Refresh()
 {
     while (_fetcherRunning)
     {
-        _windowController->RefreshMsg();
+        if (!_windowController->RefreshMsg())
+        {
+            EventBusInstance::instance().publish(WindowLostEvent{ std::to_string(int(_hwnd)) });
+            break;
+        }
         _msgExporter->GetQQMessages();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
