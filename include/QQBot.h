@@ -16,15 +16,15 @@ public:
     ~QQBot();
     void run(); 
     void stop(); 
-    WinInIWrapper *BotConfig;
     HWND GetMainGroup() const { return _mainGroup; }
 
 private:
-    bool WaitGroup();
+    bool waitGroup();
     void setupMessageProcessingPipeline(); 
     void setupExecutorPipeline();
-    bool ReadBotConfig();
-    void watchEventBus();
+    bool readBotConfig();
+    void watchParserEventBus();
+    void initialize(const std::string& configPath);
 
 private:
     Botlog* _logger = Botlog::GetInstance();
@@ -34,6 +34,7 @@ private:
     std::string _symbol;
     std::unique_ptr<Parser> _parser;
 	std::unique_ptr<Executor<QMessage>> _executor;
+    std::unique_ptr<WinInIWrapper> _botConfig;
     std::future<void> _reinitializationTask;
     std::mutex _reinitializationTaskMutex;
 };

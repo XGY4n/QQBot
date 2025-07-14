@@ -102,7 +102,9 @@ def main():
                 "task_uuid": task_uuid,
                 "result": task_result,
                 "status": "success", # 可以添加状态信息
-                "timestamp": datetime.datetime.now().isoformat() # 添加时间戳
+                "timestamp": datetime.datetime.now().isoformat(), # 添加时间戳
+                "return_type" : return_type
+
             }
             cppHttp_bridge.report_result(report_data)
             write_log(f"已调用 cppHttp_bridge.report_result 上报结果，包含 UUID: {task_uuid}")
@@ -121,7 +123,8 @@ def main():
             "task_uuid": task_uuid,
             "result": "Error: " + str(e),
             "status": "failed",
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.datetime.now().isoformat(),
+            "return_type": return_type
         }
         cppHttp_bridge.report_result(error_report_data)
         write_log(f"已上报错误结果，包含 UUID: {task_uuid}")

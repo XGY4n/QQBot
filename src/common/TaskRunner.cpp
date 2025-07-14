@@ -75,10 +75,10 @@ std::optional<PythonTaskRunner::ServiceCallbackInfo> PythonTaskRunner::run(Task 
 		_logger->LOG_ERROR_SELF("Python task execution failed: " + std::string(e.what()));
     }
     _logger->LOG_SUCCESS_SELF("Python task execution done: " + std::string(ans_string));
-    return BuildTCB(ans_string);
+    return BuildTCB(ans_string, task);
 }
 
-PythonTaskRunner::ServiceCallbackInfo PythonTaskRunner::BuildTCB(const char* TaskCallBackJsonstr)
+PythonTaskRunner::ServiceCallbackInfo PythonTaskRunner::BuildTCB(const char* TaskCallBackJsonstr, Task task)
 {
     ServiceCallbackInfo info;
     nlohmann::json j = nlohmann::json::parse(TaskCallBackJsonstr);
@@ -88,5 +88,6 @@ PythonTaskRunner::ServiceCallbackInfo PythonTaskRunner::BuildTCB(const char* Tas
     info.task_uuid = j["task_uuid"].get<std::string>();
     info.status = 1;
     info.returnType = ReturnTypeMap[j["return_type"].get<std::string>()];
+    info.callInfo = task.callInfo;
     return info;
 }

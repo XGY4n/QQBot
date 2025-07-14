@@ -21,6 +21,7 @@ public :
 		short status;
 		std::string reportUrl;
 		PyReturnType returnType;
+		QMessage callInfo;
 	}ServiceCallbackInfo;
 	//typedef ServiceCallbackInfo PSCBI;
 public:

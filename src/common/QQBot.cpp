@@ -1,22 +1,27 @@
 #include <QQBot.h>
 
 
-QQBot::QQBot()
-	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol("")
+QQBot::QQBot() 
+	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr) 
 {
-	BotConfig = new WinInIWrapper("./ini/BotSetting.ini");
-	if (!BotConfig->IsValid())
-	{
-		_logger->LOG_ERROR_SELF("BotConfig is not valid, please check the config file path.");
-		exit(EXIT_FAILURE);
-	}
-	_executor = std::make_unique<Executor<QMessage>>();
-	ReadBotConfig();
-	watchEventBus();
-
+	initialize("./ini/BotSetting.ini");
+	watchParserEventBus();
 }
 
-void QQBot::watchEventBus() 
+QQBot::QQBot(std::string ConfigPath) 
+	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr)
+{
+	initialize(ConfigPath);
+}
+
+QQBot::~QQBot()
+{
+	stop();
+	_parser.reset();
+	_executor.reset();
+}
+
+void QQBot::watchParserEventBus() 
 {
 	EventBusInstance::instance().subscribe<WindowLostEvent>(
 		[this](const WindowLostEvent& event) {
@@ -32,6 +37,8 @@ void QQBot::watchEventBus()
 				_logger->LOG_SUCCESS_SELF(" Async reinitialization task started.");
 				_parser->stop();
 				_parser.reset();
+				waitGroup();
+				_executor->SetHWDN(_mainGroup);
 				setupMessageProcessingPipeline(); 
 				_logger->LOG_SUCCESS_SELF("Async reinitialization task completed.");
 				});
@@ -39,20 +46,26 @@ void QQBot::watchEventBus()
 
 }
 
-QQBot::QQBot(std::string Configpath)
-	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol("")
-{
-	BotConfig = new WinInIWrapper(Configpath);
-	if (!BotConfig->IsValid())
+void QQBot::initialize(const std::string& configPath) {
+	_botConfig = std::make_unique<WinInIWrapper>(configPath);
+	if (!_botConfig->IsValid()) 
 	{
-		_logger->LOG_ERROR_SELF( "BotConfig is not valid, please check the config file path.");
+		_logger->LOG_ERROR_SELF("BotConfig is not valid, please check the config file path.");
 		exit(EXIT_FAILURE);
 	}
-	ReadBotConfig();
-
+	if (_executor == nullptr)
+	{
+		_executor = std::make_unique<Executor<QMessage>>();
+		_logger->LOG_SUCCESS_SELF("Executor initialized.");
+	}
+	else
+	{
+		_logger->LOG_WARNING_SELF("Executor already initialized, skipping reinitialization.");
+	}
+	readBotConfig();
 }
 
-bool QQBot::WaitGroup()
+bool QQBot::waitGroup()
 {
 	std::string tempg;
 	std::string tempc;
@@ -90,33 +103,24 @@ bool QQBot::WaitGroup()
 	return false;
 }
 
-
 void QQBot::run()
 {
+	waitGroup();
 	setupMessageProcessingPipeline();
 	setupExecutorPipeline();
-}
-
-QQBot::~QQBot()
-{
-
 }
 
 void QQBot::stop()
 {
 	_logger->LOG_SUCCESS_SELF("Stopping QQBot...");
-	if (BotConfig) {
-		delete BotConfig;
-		BotConfig = nullptr;
-	}
 	_logger->LOG_SUCCESS_SELF("QQBot stopped.");
 	exit(0);
 }
 
-bool QQBot::ReadBotConfig()
+bool QQBot::readBotConfig()
 {
-	std::string gid = BotConfig->FindValueA<std::string>("Group", "name");
-	_symbol = BotConfig->FindValueA<std::string>("mark", "Symbol");
+	std::string gid = _botConfig->FindValueA<std::string>("Group", "name");
+	_symbol = _botConfig->FindValueA<std::string>("mark", "Symbol");
 
 	if (gid != std::string())
 	{
@@ -134,33 +138,34 @@ bool QQBot::ReadBotConfig()
 
 void QQBot::setupMessageProcessingPipeline()
 {
-	if (WaitGroup())
+	//if (waitGroup())
+	//{}
+	_parser = ParserFactory::Create(_msgCenter, _symbol);
+	_parser->SetMessageCallback([this](const QMessage msg)
 	{
-		_parser = ParserFactory::Create(_msgCenter, _symbol);
-		_parser->SetMessageCallback([this](const QMessage msg)
+		if (_executor) 
 		{
-			if (_executor) 
-			{
-				_executor->push(msg);
-			}
-			else 
-			{
-				_logger->LOG_ERROR_SELF("Executor is not initialized.");
-			}
-		});
-		_parser->start();
-	}
+			_executor->push(msg);
+		}
+		else 
+		{
+			_logger->LOG_ERROR_SELF("Executor is not initialized.");
+		}
+	});
+	_parser->start();
+	
 }
 
 void QQBot::setupExecutorPipeline()
 {
-	if (_executor) 
+	if (_executor)
 	{
+
 		_executor->SetHWDN(_mainGroup);
-		_executor->start();
+		_executor->start();		
 	}
-	else 
+	else
 	{
-		_logger->LOG_ERROR_SELF("Executor is not initialized.");
+		_logger->LOG_WARNING_SELF("Executor already initialized, skipping reinitialization.");
 	}
 }

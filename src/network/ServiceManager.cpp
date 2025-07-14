@@ -51,10 +51,10 @@ ServiceManager::~ServiceManager()
 
 void ServiceManager::start()
 {            
-    _logger->LOG_SUCCESS_SELF("ServiceManager::start() called. Starting HTTP server thread...");
 
     try
-    {
+    {    
+        _logger->LOG_SUCCESS_SELF("ServiceManager::start() called. Starting HTTP server thread...");
         _resultServer->setupRoutes();  
         _resultServer->start();
         _resultServer->setReportPostCallback([this](const std::string& body) {
@@ -116,6 +116,8 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
     httpTask.returnType = ServiceTask.returnType;
     httpTask.heartbeatPort = ServiceTask.heartbeat_port;
     httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
+    httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
+    httpTask.callInfo = ServiceTask.callInfo;
     _TaskMapping.insert({ ServiceTask.task_uuid, httpTask});
     _logger->LOG_SUCCESS_SELF("Task with ID " + std::to_string(ServiceTask.pId) + " registered successfully.");
 }
@@ -165,7 +167,10 @@ void ServiceManager::HandleTaskRev(std::string body)
 {
     nlohmann::json j = nlohmann::json::parse(body);
     std::string uuid = j["task_uuid"].get<std::string>();
+    auto sendBackCopy = _TaskMapping.find(uuid);
     ReleaseTask(uuid);
+    EventBusInstance::instance().publish(HttpCallbackInfo{ body, sendBackCopy->second.callInfo });
+
 }
 
 
@@ -177,6 +182,17 @@ void ServiceManager::MonitorTasks() {
             std::lock_guard<std::mutex> lock(_taskMapMutex);
             for (auto it = _TaskMapping.begin(); it != _TaskMapping.end(); ) 
             {
+                //if (it->second.taskType == Short)
+                //{
+                //    auto duration = std::chrono::duration_cast<std::chrono::seconds>(
+                //        now - it->second.taskBuildTime).count();
+                //    if (duration > 30)
+                //    {
+                //        ReleaseTask(it->second.task_uuid);
+                //        it = _TaskMapping.erase(it);
+                //        continue;
+                //    }
+                //}
                 auto duration = std::chrono::duration_cast<std::chrono::seconds>(
                     now - it->second.lastHeartbeatTime).count();
 

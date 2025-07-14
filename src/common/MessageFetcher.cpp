@@ -75,7 +75,7 @@ void MessageFetcher::Refresh()
             break;
         }
         _msgExporter->GetQQMessages();
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 

@@ -15,14 +15,20 @@ class Executor {
 public:
     Executor()
     {
-        //_sender = std::make_unique<QQMessageSender>(_targetGroup);
         _pyTaskBuilder = std::make_unique<TaskBuilder>();
         _pyTaskrunner = std::make_unique<PythonTaskRunner>();
-		_serviceManager = std::make_unique<ServiceManager>(); // Example URL, adjust as needed
+		_serviceManager = std::make_unique<ServiceManager>(); 
+        _sender = std::make_unique<QQMessageSender>(_targetGroup);
 		if (!_serviceManager) {
 			_logger->LOG_ERROR_SELF("Failed to create ServiceManager instance.");
 			return;
-		}
+		}        
+        EventBusInstance::instance().subscribe<HttpCallbackInfo>(
+            [this](const HttpCallbackInfo& event) {
+                _logger->LOG_SUCCESS_SELF("send to QQ :" + event.HttpBody);
+               
+                _sender->sendMessageAsJson(event.HttpBody, event.callInfo);//sendMessageAsJson
+            });
 		_serviceManager->start(); // Start the service manager to handle tasks
     } 
     ~Executor() 
@@ -80,6 +86,7 @@ public:
     void SetHWDN(HWND target)
     {
         _targetGroup = target;
+        _sender->setGroubHandle(_targetGroup);
     }
 
 private:

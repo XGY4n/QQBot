@@ -28,8 +28,10 @@ class ServiceManager
 		int heartbeatPort;
 		Type taskType = Short;
         PythonTaskRunner::PyReturnType returnType;
+        std::chrono::steady_clock::time_point taskBuildTime;
         std::chrono::steady_clock::time_point lastHeartbeatTime;
         PythonTaskRunner::ServiceCallbackInfo callback; 
+        QMessage callInfo;
     };
 
 public:

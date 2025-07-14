@@ -16,7 +16,7 @@ public:
 	std::optional<PythonTaskRunner::ServiceCallbackInfo> run(Task task) override;
 	ITaskRunner::ServiceCallbackInfo GetRunningTaskCallBack();
 private : 
-	ITaskRunner::ServiceCallbackInfo BuildTCB(const char* TaskCallBackJsonstr);
+	ITaskRunner::ServiceCallbackInfo BuildTCB(const char* TaskCallBackJsonstr, Task task);
 private :
 	Botlog* _logger = Botlog::GetInstance();
 

@@ -10,6 +10,8 @@
 QQMessageSender::QQMessageSender(HWND Group) 
 {
     _group = Group;
+    _botConfig = std::make_unique<WinInIWrapper>("./ini/BotSetting.ini");
+    isAtback = _botConfig->FindValueA<bool>("@", "isAtback");
 }
 
 void QQMessageSender::sendMessageAt(std::string QQnumber)
@@ -23,7 +25,7 @@ void QQMessageSender::sendMessageAt(std::string QQnumber)
         SendMessage(_group, WM_IME_CHAR, text[i], 0);
     Sleep(50);
     SendMessage(_group, WM_KEYDOWN, VK_RETURN, 0);
-    Sleep(50);
+    Sleep(30);
 }
 
 
@@ -67,6 +69,23 @@ void QQMessageSender::SendImageToGroup(const std::string& imagePath) {
     SendImageToWindow(imagePath);
 }
 
+bool QQMessageSender::IsImageFileExtension(const std::string& extension) {
+    if (!fs::exists(GetFullPath(extension)))
+    {
+        return false;
+    }
+    static const std::set<std::string> imageExtensions = {
+        ".jpg", ".jpeg", ".gif", ".png", ".bmp"
+    };
+
+    std::string ext = extension;
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
+        return std::tolower(c);
+        });
+
+    return imageExtensions.find(ext) != imageExtensions.end();
+}
+
 // 通用发送方法实现
 void QQMessageSender::sendMessage(const std::string& content) {
     if (fs::exists(GetFullPath(content))) {
@@ -75,7 +94,7 @@ void QQMessageSender::sendMessage(const std::string& content) {
             return std::tolower(c);
             });
 
-        if (ext == ".jpg" || ext == ".gif" || ext == ".png" || ext == ".bmp") {
+        if (ext == ".jpg" || ext == ".gif" || ext == ".png" || ext == ".bmp" || ext == ".jpg" || ext == ".jpge") {
             SendImageToGroup(content);
         }
         else {
@@ -87,6 +106,188 @@ void QQMessageSender::sendMessage(const std::string& content) {
     }
 }
 
+bool QQMessageSender::ParseJsonInfo(const std::string& jsonStr,
+    std::string& uuid, std::string& status,
+    std::string& timestamp, std::string& return_type,
+    std::string& values)
+{
+    try {
+        auto j = nlohmann::json::parse(jsonStr);
+        uuid = j["task_uuid"];
+        status = j["status"];
+        timestamp = j["timestamp"];
+        return_type = j["return_type"];
+        values = j["result"].get<std::string>();
+        _logger->LOG_SUCCESS_SELF(values);
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::string err = "Exception: " + std::string(e.what()) + " HttpCallback : " + jsonStr;
+        _logger->LOG_SUCCESS_SELF(err);
+        return false;
+    }
+}
+
+bool QQMessageSender::IsNumeric(const std::string& str)
+{
+    return !str.empty() && std::all_of(str.begin(), str.end(), ::isdigit);
+}
+
+void QQMessageSender::SendFileOrFallback(const std::string& path)
+{
+    std::string full = GetFullPath(path);
+    if (fs::exists(full))
+        SendFileToGroup(path);
+    else
+        SendTextToGroup("File not found: " + path);
+}
+
+void QQMessageSender::SendImageOrFallback(const std::string& path)
+{
+    std::string full = GetFullPath(path);
+    if (fs::exists(full) && IsImageFileExtension(full))
+        SendImageToGroup(path);
+    else
+        SendTextToGroup("Invalid image file: \"" + path + "\". Supported types: " + _kSupportedImageTypes + ".");
+}
+
+void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo)
+{
+    std::string task_uuid, status, timestamp, return_type, values;
+
+    if (!ParseJsonInfo(JsonInfo, task_uuid, status, timestamp, return_type, values))
+    {
+        sendMessage("JSON parse failed or invalid structure: " + JsonInfo);
+        return;
+    }
+
+    if (status == "faild")
+    {
+        sendMessage("Task failed:\n" + JsonInfo);
+        return;
+    }
+
+    auto it = TaskBuilder::ReturnTypeMap.find(return_type);
+    if (it == TaskBuilder::ReturnTypeMap.end())
+    {
+        SendTextToGroup("Unknown return type: " + return_type);
+        return;
+    }
+
+    auto returnType = it->second;
+
+    if (isAtback)
+    {
+        const std::string& target = callinfo.QQNumber;
+        const std::string& fallback = callinfo.name;
+        sendMessageAt(IsNumeric(target) ? target : fallback);
+    }
+
+    switch (returnType)
+    {
+    case TaskBuilder::STRING:
+        SendTextToGroup(values);
+        break;
+    case TaskBuilder::FILE:
+        SendFileOrFallback(values);
+        break;
+    case TaskBuilder::QIMAGE:
+        SendImageOrFallback(values);
+        break;
+    case TaskBuilder::AUTO:
+        sendMessage(values);
+        break;
+    default:
+        SendTextToGroup("Return type not defined");
+        break;
+    }
+}
+
+//void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo)
+//{
+//    std::string task_uuid;
+//    std::string status;
+//    std::string timestamp;
+//    std::string return_type;
+//    std::string values;
+//    try {
+//        auto j = nlohmann::json::parse(JsonInfo);
+//        task_uuid = j["task_uuid"];
+//        status = j["status"];
+//        timestamp = j["timestamp"];
+//        return_type = j["return_type"];
+//        values = j["result"].get<std::string>();
+//        _logger->LOG_SUCCESS_SELF(values);
+//
+//    } 
+//    catch (const std::exception& e) {
+//        std::string err = "Exception: " + std::string(e.what()) + " HttpCallback : " + JsonInfo;
+//        _logger->LOG_SUCCESS_SELF(err);
+//        sendMessage(err);
+//        return;
+//    }
+//
+//    if (status == "faild")
+//    {
+//        sendMessage(JsonInfo);
+//        return;
+//    }
+//    if (TaskBuilder::ReturnTypeMap.find(return_type) != TaskBuilder::ReturnTypeMap.end())
+//    {
+//        TaskBuilder::PyReturnType returntpye = TaskBuilder::ReturnTypeMap[return_type];
+//        if (isAtback)
+//        {
+//            const std::string& target = callinfo.QQNumber;
+//            bool isNumber = !target.empty() && std::all_of(target.begin(), target.end(), ::isdigit);
+//
+//            if (isNumber) {
+//                sendMessageAt(callinfo.QQNumber);
+//            }
+//            else {
+//                sendMessageAt(callinfo.name);
+//            }
+//        }
+//        switch (returntpye)
+//        {
+//        case TaskBuilder::STRING:
+//            SendTextToGroup(values);
+//            break;
+//        //case WSTRING:
+//            //Send_wStringTEXT_Message(reflex_wstr);
+//            //break;
+//        case TaskBuilder::FILE:
+//            if (fs::exists(GetFullPath(values)))
+//            {
+//                SendFileToGroup(values);
+//            }
+//            else
+//            {
+//                SendTextToGroup("file "+ values + " not find ");
+//            }
+//            break;
+//        case TaskBuilder::QIMAGE:
+//            if (IsImageFileExtension(values))
+//            {
+//                SendImageToGroup(values);
+//            }
+//            else
+//            {
+//                SendTextToGroup("file " + values + "not find or not in set : .jpg, .jpeg, .gif, .png, .bmp");
+//            }
+//            break;
+//            //case UNKNOWN:
+//        case TaskBuilder::AUTO:
+//            sendMessage(values);
+//            break;
+//        default:
+//            SendTextToGroup("return type not define");
+//            break;
+//        }
+//        return;
+//    }
+//
+//}
+
 // 设置群聊名称
 void QQMessageSender::SetGroupName(const std::string& groupName) {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -96,8 +297,8 @@ void QQMessageSender::SetGroupName(const std::string& groupName) {
 // 私有方法实现
 HWND QQMessageSender::FindTargetWindow(const std::string& targetName) {
     HWND hwnd = FindWindow(_T("TXGuiFoundation"), multi_Byte_To_Wide_Char(targetName));
-    if (!hwnd && logger) {
-        logger->LOG_ERROR_SELF("Window not found: " + targetName);
+    if (!hwnd && _logger) {
+        _logger->LOG_ERROR_SELF("Window not found: " + targetName);
     }
     return hwnd;
 }
@@ -118,7 +319,8 @@ void QQMessageSender::SendStringToWindow(const std::string& message) {
 
 void QQMessageSender::SendFileToWindow( const std::string& filePath) {
     if (!FileExists(filePath)) {
-        if (logger) logger->LOG_ERROR_SELF("File not found: " + filePath);
+        if (_logger) _logger->LOG_ERROR_SELF("File not found: " + filePath);
+        SendStringToWindow("File not found: " + filePath);
         return;
     }
 
@@ -127,10 +329,10 @@ void QQMessageSender::SendFileToWindow( const std::string& filePath) {
         Sleep(100);
         SendMessageA(_group, WM_KEYDOWN, VK_RETURN, 0);
         Sleep(100);
-        if (logger) logger->LOG_SUCCESS_SELF("File sent: " + filePath);
+        if (_logger) _logger->LOG_SUCCESS_SELF("File sent: " + filePath);
     }
-    else if (logger) {
-        logger->LOG_ERROR_SELF("Failed to copy file to clipboard: " + filePath);
+    else if (_logger) {
+        _logger->LOG_ERROR_SELF("Failed to copy file to clipboard: " + filePath);
     }
 }
 
@@ -186,9 +388,9 @@ bool QQMessageSender::AddRichEditFormatToClipboard(const std::string& targetPath
     if (!FileExists(targetPath)) return false;
 
     if (FileExists(targetPath)) {// && file.substr(file.length() - 4) == ".gif")
-        std::string qqRichEditData = "<QQRichEditFormat><Info version=\"1001\"></Info><EditElement type=\"7\" filepath=\"" + targetPath + "\" shortcut=\"\"></EditElement></QQRichEditFormat>";
+        std::string qqRichEditData = "<QQRichEditFormat><Info version=\"1001\"></Info><EditElement type=\"1\" imagebiztype=\"0\" filepath=\"" + targetPath + "\" shortcut=\"\"></EditElement></QQRichEditFormat>";
         std::vector<char> data(qqRichEditData.begin(), qqRichEditData.end());
-        logger->LOG_SUCCESS_SELF(qqRichEditData);
+        _logger->LOG_SUCCESS_SELF(qqRichEditData);
         //std::cout << data << std::endl;
         // Put data into clipboard
         if (OpenClipboard(0)) {
@@ -230,7 +432,7 @@ std::string QQMessageSender::GenerateTempFile(const std::string& filePath) {
         return tempFilePath;
     }
 
-    if (logger) logger->LOG_ERROR_SELF("Failed to create temp file: " + tempFilePath);
+    if (_logger) _logger->LOG_ERROR_SELF("Failed to create temp file: " + tempFilePath);
     return "";
 }
 
@@ -245,7 +447,7 @@ bool QQMessageSender::EnsureFolderExists(const std::string& folderPath) {
         return true;
     }
 
-    if (logger) logger->LOG_ERROR_SELF("Failed to create directory: " + folderPath);
+    if (_logger) _logger->LOG_ERROR_SELF("Failed to create directory: " + folderPath);
     return false;
 }
 

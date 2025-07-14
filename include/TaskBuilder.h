@@ -10,6 +10,7 @@
 
 struct Task 
 {
+    QMessage callInfo;
     unsigned int messageId;
     bool status = false;
     std::string pythonScriptPath;
@@ -47,23 +48,8 @@ public:
         AUTO,
         UNKNOWN
     };
-
-    std::map<std::string, PyReturnType> ReturnTypeMap = {
-        {"str", STRING},
-        {"wstr", WSTRING},
-        {"file", FILE},
-        {"QImage",QIMAGE},
-        {"Auto", AUTO},
-        {"undefine", UNKNOWN},
-    };
-
-    std::map<std::string, KeyValue> keyMap = {
-        {"Py_Call_Head", Py_Call_Head},
-        {"Py_Call_Path", Py_Call_Path},
-        {"Py_Call_File", Py_Call_File},
-        {"Py_Call_Func", Py_Call_Fun},
-        {"Py_Return_type", Py_Return_type}
-    };
+    static std::map<std::string, PyReturnType> ReturnTypeMap;
+    static std::map<std::string, KeyValue> keyMap;
 
     TaskBuilder();
     ~TaskBuilder();

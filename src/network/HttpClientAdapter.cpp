@@ -2,8 +2,11 @@
 
 void HttpClientAdapter::sendHeartbeatTask(int port)
 {
-	httplib::Client client("127.0.0.1", port);
-	client.Get("/health");
+	if (_client == nullptr)
+	{
+		_client = std::make_unique<httplib::Client>("127.0.0.1", port);
+	}
+	 _client->Get("/health");
 }
 
 HttpClientAdapter::HttpClientAdapter()

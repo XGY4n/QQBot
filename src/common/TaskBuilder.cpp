@@ -1,5 +1,22 @@
 ﻿#include <TaskBuilder.h>
 
+std::map<std::string, TaskBuilder::PyReturnType> TaskBuilder::ReturnTypeMap = {
+    {"str", TaskBuilder::STRING},
+    {"wstr", TaskBuilder::WSTRING},
+    {"file", TaskBuilder::FILE},
+    {"QImage", TaskBuilder::QIMAGE},
+    {"Auto", TaskBuilder::AUTO},
+    {"undefine", TaskBuilder::UNKNOWN}
+};
+
+std::map<std::string, TaskBuilder::KeyValue> TaskBuilder::keyMap = {
+    {"Py_Call_Head", TaskBuilder::Py_Call_Head},
+    {"Py_Call_Path", TaskBuilder::Py_Call_Path},
+    {"Py_Call_File", TaskBuilder::Py_Call_File},
+    {"Py_Call_Func", TaskBuilder::Py_Call_Fun},
+    {"Py_Return_type", TaskBuilder::Py_Return_type}
+};
+
 TaskBuilder::TaskBuilder()
 {
     _PyCfg = std::make_unique<WinInIWrapper>("./ini/PythonTask.ini");
@@ -22,7 +39,6 @@ void TaskBuilder::ReadPyTaskConfig()
             {
                 _reflexmap.insert(std::make_pair(keyValue.second, iniSection));
             }
-            //_logger->Record(Botlog::LEVEL_SUCCESS, Botlog::OWNER_SELF, keyValue.first + "=>" + keyValue.second);
             _logger->LOG_SUCCESS_SELF(keyValue.first + "=>" + keyValue.second);
         }
     }
@@ -168,6 +184,7 @@ Task TaskBuilder::build(const QMessage rawMessage)
 	task.functionName = reflexinfo.callFunc;
 	task.fileName = reflexinfo.callFile;
 	task.argument = expr;
+    task.callInfo = rawMessage;
     auto test = expr.c_str();
     nlohmann::json j;
     j["Type"] = multi_Byte_To_Wide_Char2(rawMessage.message);

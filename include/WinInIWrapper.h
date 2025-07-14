@@ -108,13 +108,19 @@ public:
 
         if (value.empty())
         {
-            return std::string();
+            return T{};//std::string();
         }
 
         if constexpr (std::is_same<T, std::string>::value)
             return value;
         else if constexpr (std::is_same<T, std::wstring>::value)
             return std::wstring(value.begin(), value.end());
+        else if constexpr (std::is_same<T, bool>::value)
+        {
+            std::string lowerVal = value;
+            std::transform(lowerVal.begin(), lowerVal.end(), lowerVal.begin(), ::tolower);
+            return (lowerVal == "true" || lowerVal == "1");
+        }
         else
         {
 
@@ -123,7 +129,7 @@ public:
             ss >> result;
             if (ss.fail() || ss.bad() || !ss.eof())
             {
-                return std::string();
+                return T{};/*std::string();*/
             }
             return result;
         }

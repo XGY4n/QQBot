@@ -8,12 +8,21 @@
 #include "Botlog.h"
 #include "MD5.h"
 #include <WinIniWrapper.h>
+#include <nlohmann/json.hpp>
+#include <TaskBuilder.h>
+#include <set>
+
 namespace fs = std::filesystem;
 
 class QQMessageSender {
 public:
     QQMessageSender(HWND Group);
 
+    void setGroubHandle(HWND Group)
+    {
+        _group = Group;
+
+    }
     // 文本消息发送
     void SendTextToGroup(const std::string& message);
     void SendTextToUser(const std::string& message, const std::string& userName);
@@ -27,7 +36,7 @@ public:
 
     // 通用发送方法（自动判断类型）
     void sendMessage(const std::string& content);
-
+    void sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo);
     // 设置群聊名称
     void SetGroupName(const std::string& groupName);
     void sendMessageAt(std::string QQnumber);
@@ -43,6 +52,7 @@ private:
     // 剪贴板操作
     bool CopyFileToClipboard(const char* szFileName);
     bool AddRichEditFormatToClipboard(const std::string& targetPath);
+    bool IsImageFileExtension(const std::string& extension);
 
     // 文件系统操作
     std::string GenerateTempFile(const std::string& filePath);
@@ -50,10 +60,25 @@ private:
     bool FileExists(const std::string& filePath);
     std::string GetFullPath(const std::string& path);
 
+    bool ParseJsonInfo(const std::string& jsonStr,
+        std::string& uuid,
+        std::string& status,
+        std::string& timestamp,
+        std::string& return_type,
+        std::string& values);
+
+    bool IsNumeric(const std::string& str);
+
+    void SendFileOrFallback(const std::string& path);
+
+    void SendImageOrFallback(const std::string& path);
 private:
-    Botlog* logger = Botlog::GetInstance();
+    const std::string _kSupportedImageTypes = ".jpg, .jpeg, .png, .bmp, .gif";
+    Botlog* _logger = Botlog::GetInstance();
     HWND _group;
     std::string m_groupName;
     std::mutex m_mutex;
+    std::unique_ptr<WinInIWrapper> _botConfig;
+    bool isAtback = false;
 };
 

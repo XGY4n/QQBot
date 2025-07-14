@@ -4,7 +4,6 @@
 #include <string>
 #include "httplib.h"
 #include <Botlog.h>
-
 class HttpClientAdapter {
 public:
     HttpClientAdapter();
@@ -13,4 +12,5 @@ public:
 
 private:
     Botlog* _logger = Botlog::GetInstance();
+    std::unique_ptr<httplib::Client> _client;
 };
