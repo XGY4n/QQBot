@@ -9,6 +9,8 @@
 #include <Executor.h>
 #include <Bus/EventBusInstance.h>
 #include <future>
+#include <ThreadPool.h>
+
 class QQBot {
 public:
     QQBot();
@@ -37,4 +39,6 @@ private:
     std::unique_ptr<WinInIWrapper> _botConfig;
     std::future<void> _reinitializationTask;
     std::mutex _reinitializationTaskMutex;
+    //std::unique_ptr<ThreadPool> _pool;
+    ThreadPool _pool;
 };

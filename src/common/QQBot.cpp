@@ -2,14 +2,14 @@
 
 
 QQBot::QQBot() 
-	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr) 
+	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr), _pool(4)
 {
 	initialize("./ini/BotSetting.ini");
 	watchParserEventBus();
 }
 
 QQBot::QQBot(std::string ConfigPath) 
-	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr)
+	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr), _pool(4)
 {
 	initialize(ConfigPath);
 }
@@ -23,27 +23,21 @@ QQBot::~QQBot()
 
 void QQBot::watchParserEventBus() 
 {
-	EventBusInstance::instance().subscribe<WindowLostEvent>(
+	EventBusInstance::instance().setExecutor([this](std::function<void()> job) {
+		_pool.enqueue(std::move(job));
+	});
+
+	EventBusInstance::instance().asyncSubscribe<WindowLostEvent>(
 		[this](const WindowLostEvent& event) {
 			_logger->LOG_ERROR_SELF("Window lost from: " + event.componentName);
-			std::lock_guard<std::mutex> lock(_reinitializationTaskMutex);
-			if (_reinitializationTask.valid() &&
-				_reinitializationTask.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
-				_logger->LOG_WARNING_SELF("Reinitialization task already running, ignoring this event.");
-				return;
-			}
-			// Launch async task
-			_reinitializationTask = std::async(std::launch::async, [this]() {
-				_logger->LOG_SUCCESS_SELF(" Async reinitialization task started.");
-				_parser->stop();
-				_parser.reset();
-				waitGroup();
-				_executor->SetHWDN(_mainGroup);
-				setupMessageProcessingPipeline(); 
-				_logger->LOG_SUCCESS_SELF("Async reinitialization task completed.");
-				});
+			_logger->LOG_SUCCESS_SELF(" Async reinitialization task started.");
+			_parser->stop();
+			_parser.reset();
+			waitGroup();
+			_executor->SetHWDN(_mainGroup);
+			setupMessageProcessingPipeline(); 
+			_logger->LOG_SUCCESS_SELF("Async reinitialization task completed.");
 		});
-
 }
 
 void QQBot::initialize(const std::string& configPath) {
@@ -138,8 +132,6 @@ bool QQBot::readBotConfig()
 
 void QQBot::setupMessageProcessingPipeline()
 {
-	//if (waitGroup())
-	//{}
 	_parser = ParserFactory::Create(_msgCenter, _symbol);
 	_parser->SetMessageCallback([this](const QMessage msg)
 	{
