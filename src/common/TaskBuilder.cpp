@@ -186,10 +186,18 @@ Task TaskBuilder::build(const QMessage rawMessage)
 	task.argument = expr;
     task.callInfo = rawMessage;
     auto test = expr.c_str();
+    std::error_code ec;
+    std::filesystem::path abs_path = std::filesystem::absolute(task.pythonScriptPath, ec);
+    if (ec)
+    {
+        task.status = false;
+        _logger->LOG_ERROR_SELF("Failed to get absolute path from script path: " + task.pythonScriptPath + ", error: " + ec.message());
+        return task;
+    }
     nlohmann::json j;
     j["Type"] = multi_Byte_To_Wide_Char2(rawMessage.message);
     j["value"] = multi_Byte_To_Wide_Char2(test);
-    j["script_path"] = task.pythonScriptPath; 
+    j["script_path"] = abs_path;
     j["Module"] = task.fileName;
 	j["Function"] = task.functionName;
     j["ReturnType"] = reflexinfo.returnType;
