@@ -19,7 +19,7 @@
 ```bash
 mkdir build
 cd build
-cmake .. -G "Visual Studio 17 2022" -A x64 
+cmake -DPYTHON_INCLUDE_DIR="your/python/39/include/path" .. -G "Visual Studio 17 2022" -A x64
 ```
 ### 3. 配置 INI 文件
 推荐编译后将ini模板文件移动到build/ 和 .exe的输出目录下再编辑

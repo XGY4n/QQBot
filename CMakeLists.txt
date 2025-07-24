@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(PYTHON_DIR "${CMAKE_SOURCE_DIR}/Python")
 set(DLL_DIR "${CMAKE_SOURCE_DIR}/dll")
-set(PYTHON_INCLUDE_DIR "D:/workspace/Python/Python39/include")
+set(PYTHON_INCLUDE_DIR "D:/workspace/Python/Python39/include" CACHE PATH "Python include path")
 
 set(INI_DIR "${CMAKE_SOURCE_DIR}/ini")
 
