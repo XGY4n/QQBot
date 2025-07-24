@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(PYTHON_DIR "${CMAKE_SOURCE_DIR}/Python")
 set(DLL_DIR "${CMAKE_SOURCE_DIR}/dll")
+set(PYTHON_INCLUDE_DIR "D:/workspace/Python/Python39/include")
 
 set(INI_DIR "${CMAKE_SOURCE_DIR}/ini")
 
@@ -15,7 +16,7 @@ message(STATUS "Number of logical CPU cores: ${CPU_NUMBER_OF_LOGICAL_CORES}")
 
 include_directories(
     "${CMAKE_SOURCE_DIR}/include"
-    "D:/workspace/Python/Python39/include"
+    "${PYTHON_INCLUDE_DIR}"
 )
 
 link_directories("${CMAKE_SOURCE_DIR}/libs")
@@ -50,6 +51,8 @@ add_custom_command(TARGET QQBot POST_BUILD
         "${DLL_DIR}/python39.dll" "$<TARGET_FILE_DIR:QQBot>"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${PYTHON_DIR}" "$<TARGET_FILE_DIR:QQBot>/Python"
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PYTHON_DIR}" "${CMAKE_BINARY_DIR}/Python"
     COMMENT "Copying runtime files to output directory"
 )
 

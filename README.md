@@ -12,8 +12,17 @@
 如未安装，可从 [Python 官网](https://www.python.org/downloads/release/python-390/) 下载并安装对应版本。
 
 ---
-
-### 2. 配置 INI 文件
+### 2. 编译项目
+- 编译
+推荐使用 CMake（可通过 Visual Studio 或命令行）进行构建：
+- 需要C++17
+```bash
+mkdir build
+cd build
+cmake .. -G "Visual Studio 17 2022" -A x64 
+```
+### 3. 配置 INI 文件
+推荐编译后将ini模板文件移动到build/ 和 .exe的输出目录下再编辑
 
 项目使用多个 INI 配置文件，请按如下说明进行设置：
 
@@ -30,10 +39,13 @@
   设置机器人要连接的 QQ 群名称和响应标识符。
     ```ini
     [Group]
-    name = test
+    name = test #群名称
 
     [mark]
     Symbol = #
+
+    [@]
+    isAtback = false #回发QQ的字符串是否@回发送者
     ```
 * **PythonTask.ini**
     配置机器人将执行的 Python 任务列表。
@@ -60,22 +72,56 @@
 
 > **提示**：请将模板 `ini/` 文件夹拷贝到 `/build` 和 `/build/Debug` 或 `/build/Release` 目录下。再去编辑复制过去的.ini
 
----
+  ### 4.PythonTask.ini 返回类型说明
 
-### 3. 编译并运行项目
-- 编译
-推荐使用 CMake（可通过 Visual Studio 或命令行）进行构建：
+  `Py_Return_type` 用来指定 Python 函数的返回值类型，支持以下几种枚举值：
 
-```bash
-mkdir build
-cd build
-cmake .. -G "Visual Studio 17 2022" -A x64 
-```
+  | 类型名  | CPP枚举值   | 说明 |
+  |--------|----------|------|
+  | STRING | 0   | Python 函数返回的是 UTF-8 编码的普通字符串 (`str`)，机器人将其作为文本消息发送。 |
+  | WSTRING| 1  | Python 函数返回的是宽字符字符串（Unicode），适合包含多语言字符的文本。 |
+  | FILE   | 2     | 返回一个文件路径，机器人会读取该文件并以文件形式发送到聊天窗口。 |
+  | QIMAGE | 3   | 返回的是一个图像对象（例如 Qt 的 QImage），机器人会将该图像以QQ图片的形式发送。 |
+  | AUTO   | 4     | 自动检测返回值类型，根据 Python 返回内容智能选择合适的处理方式。 |
+  | UNKNOWN| 5  | 未知类型，通常表示返回值没有指定类型或类型未识别，机器人默认以字符串处理。 |
 
-- 运行：
+  ---
+### 5. 日志文件
+  在执行目录的/log下写入日志文件
+  其中名字带有[]的.log是C++端的文件日志, 没有带[]的是python的日志
+  可以通过cmakelist的宏
+  ```bash
+  add_definitions(-D_CLASS_LOG_)
+  ```
+  来配置C++端日志的详细性
 
- 1.启动 QQ
+### 6. 运行：
+  推荐使用TIM或老版本QQ否则可能找不到 消息管理器
+ 
+ 1.启动 QQ/TIM
 
  2.打开目标群聊
 
- 3.打开该群聊的 消息管理器 窗口（
+ 3.打开该群聊的 消息管理器 窗口
+
+### 7. python脚本编写规则：
+ 推荐打印通过
+ ```Python
+ #./script/test.py
+import QQbot
+import time
+def test(input):
+    QQbot.bot_print(input)#{'Values': 'test'}
+    QQbot.bot_print(input['Values'])#'test'
+    return "testend"#回发testend
+ ```
+ 对应
+```ini
+    [Py_load_0]              # 任务名称，随意起名，如：Py_load_0, AI, GPT 等
+    Py_Call_Head = test.     # 触发机器人响应的命令前缀
+    Py_Call_Path = ./script/ # Python 脚本文件所在的目录
+    Py_Call_File = test      # Python 脚本文件名（不含 .py 后缀）
+    Py_Call_Func = test      # Python 脚本中要调用的函数名
+    Py_Return_type = str      # 函数返回值类型，目前支持 str
+```
+

@@ -34,9 +34,10 @@ def find_available_port(min_port: int, max_port: int, exclude_ports: list = None
         attempts += 1
     raise RuntimeError(f"在 {min_port}-{max_port} 范围内找不到可用端口。")
 
-def main(jsmsg):
+def main(jsmsg, py_home):
     write_log("into dispatcher.py main()")
     write_log(jsmsg)
+    write_log("Python" + py_home)
     # 解析传入的JSON字符串
     try:
         js_data = json.loads(jsmsg)
@@ -93,7 +94,7 @@ def main(jsmsg):
 
     # 启动工作进程 - 现在只传递一个JSON参数
     cmd = [
-        "python", "./Python/worker.py",
+        py_home + "\python.exe", "./Python/worker.py",
         json.dumps(combined_payload)  # 只传递一个参数
     ]
     

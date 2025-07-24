@@ -21,14 +21,15 @@ PythonTaskRunner::~PythonTaskRunner()
 void PythonTaskRunner::ReadPythonEnvConfig()
 {
 	_PyenvCfg = new WinInIWrapper(L"./ini/PythonEnv.ini");
-	auto pyhome = _PyenvCfg->FindValueW<std::wstring>(L"PYTHONHOME", L"HOME");
-	_logger->LOG_SUCCESS_SELF("Python home path: " + std::string(pyhome.begin(), pyhome.end()));
-	Py_SetPythonHome(pyhome.c_str());
+    _pythonHomeW = std::filesystem::absolute(_PyenvCfg->FindValueW<std::wstring>(L"PYTHONHOME", L"HOME"));
+    _pythonHomeA = std::string(_pythonHomeW.begin(), _pythonHomeW.end()).c_str();
+    Py_SetPythonHome(_pythonHomeW.c_str());
 }
 
 std::optional<PythonTaskRunner::ServiceCallbackInfo> PythonTaskRunner::run(Task task)
-{//call dispatcher.py
-    const char* ans_string;
+{
+    //call dispatcher.py
+    const char* ans_string = nullptr;
     int s = -1;
     try
     {
@@ -51,7 +52,8 @@ std::optional<PythonTaskRunner::ServiceCallbackInfo> PythonTaskRunner::run(Task 
         }
 
         // 构造函数参数
-        PyObject* pArg = Py_BuildValue("(s)", task.Jsonstring.c_str());
+        PyObject* pArg = Py_BuildValue("(ss)", task.Jsonstring.c_str(), 
+            _pythonHomeA.c_str());
         if (!pArg) {
             PyErr_Print();
             throw std::runtime_error("参数构造失败！");
@@ -74,7 +76,14 @@ std::optional<PythonTaskRunner::ServiceCallbackInfo> PythonTaskRunner::run(Task 
     {
 		_logger->LOG_ERROR_SELF("Python task execution failed: " + std::string(e.what()));
     }
+
+    if (ans_string == nullptr)
+    {
+        _logger->LOG_SUCCESS_SELF("Python task execution error ");
+        return std::nullopt;
+    }
     _logger->LOG_SUCCESS_SELF("Python task execution done: " + std::string(ans_string));
+
     return BuildTCB(ans_string, task);
 }
 

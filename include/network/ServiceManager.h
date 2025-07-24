@@ -21,11 +21,11 @@ class ServiceManager
 		Short = 1, 
     };
     struct HttpTaskInfo {
-        unsigned int pId;
-        std::string task_uuid;
-        short status;
-		std::string reportUrl;
-		int heartbeatPort;
+        unsigned int pId = 0;
+        std::string task_uuid = "";
+        short status = 0;
+		std::string reportUrl = "";
+		int heartbeatPort = 0;
 		Type taskType = Short;
         PythonTaskRunner::PyReturnType returnType;
         std::chrono::steady_clock::time_point taskBuildTime;

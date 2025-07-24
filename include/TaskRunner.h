@@ -14,11 +14,12 @@ public:
 	PythonTaskRunner() ;
 	~PythonTaskRunner() override ;
 	std::optional<PythonTaskRunner::ServiceCallbackInfo> run(Task task) override;
-	ITaskRunner::ServiceCallbackInfo GetRunningTaskCallBack();
 private : 
 	ITaskRunner::ServiceCallbackInfo BuildTCB(const char* TaskCallBackJsonstr, Task task);
 private :
 	Botlog* _logger = Botlog::GetInstance();
+	std::wstring _pythonHomeW;
+	std::string _pythonHomeA;
 
 	WinInIWrapper* _PyenvCfg = nullptr;
 	void ReadPythonEnvConfig();

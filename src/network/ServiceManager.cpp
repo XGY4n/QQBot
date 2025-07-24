@@ -168,6 +168,12 @@ void ServiceManager::HandleTaskRev(std::string body)
     nlohmann::json j = nlohmann::json::parse(body);
     std::string uuid = j["task_uuid"].get<std::string>();
     auto sendBackCopy = _TaskMapping.find(uuid);
+    if (sendBackCopy == _TaskMapping.end())
+    {
+        _logger->LOG_SUCCESS_SELF("HandleTaskRev ERROR : " + uuid + "empty Task");
+
+        return;
+    }
     ReleaseTask(uuid);
     EventBusInstance::instance().publish(HttpCallbackInfo{ body, sendBackCopy->second.callInfo });
 

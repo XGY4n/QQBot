@@ -15,10 +15,10 @@ public:
 public :
 	typedef struct PythonServiceCallbackInfo
 	{
-		unsigned int pId;
-		unsigned int heartbeat_port;
+		unsigned int pId = 0;
+		unsigned int heartbeat_port = 11451;
 		std::string task_uuid;
-		short status;
+		short status = 0;
 		std::string reportUrl;
 		PyReturnType returnType;
 		QMessage callInfo;
