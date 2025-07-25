@@ -55,7 +55,10 @@ void Executor<T>::ProcessSingleTask(std::optional<T> original_task_data) {
 
     Task builtTask;
     if (!BuildTask(original_task_data, builtTask)) {
-        _logger->LOG_ERROR_SELF("BuildTask Error");
+        _logger->LOG_ERROR_SELF("BuildTask Error not a Task");
+        if (original_task_data.has_value()) {
+            _serviceManager->PostBoardcast(*original_task_data);
+        }
         return;
     }
 

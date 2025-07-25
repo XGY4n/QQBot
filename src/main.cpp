@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
         catch (const std::exception& e) {
             std::cerr << "Failed to initialize QQBot with config: " << e.what() << std::endl;
             return 1;
-        }
+        } 
     }
 
     if (bot) {

@@ -6,7 +6,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 import os
 import datetime
-import QQbot as bot
+import Botlog as logger
 import requests
 import signal
 
@@ -14,8 +14,13 @@ TIMEOUT_SECONDS = 10
 heartbeat_timer = None
 
 def write_log(message: str):
-    bot.ipc_print(message)
+    logger.ipc_print(message)
+    
+sdk_path = "./QQbot.py" 
 
+if sdk_path not in sys.path:
+    sys.path.insert(0, sdk_path)
+    
 def kill_self():
     print("[Python] 超过 10 秒未收到 C++ GET 请求，退出进程")
     os.kill(os.getpid(), signal.SIGTERM)
@@ -53,7 +58,6 @@ def main():
     write_log("into ""worker.py main()")
 
     args_json = sys.argv[1]
-
     write_log(f"接收到的 sys.argv[1] JSON 参数: {args_json}")
 
     args = json.loads(args_json)
@@ -71,7 +75,8 @@ def main():
     if report_url_for_sdk:
         # 修改：初始化 bridge 时，如果 report_bridge 支持接收 task_uuid，可以在这里传递
         # 这取决于 report_bridge.init_bridge 的实现
-        cppHttp_bridge.init_bridge(report_url_for_sdk) 
+        bridge = cppHttp_bridge.ReportBridge(report_url_for_sdk)
+
         write_log(f"初始化 QQBotSDK，报告 URL: {report_url_for_sdk}")
     else:
         write_log("未提供 report_url，未初始化 QQBotSDK")
@@ -104,9 +109,8 @@ def main():
                 "status": "success", # 可以添加状态信息
                 "timestamp": datetime.datetime.now().isoformat(), # 添加时间戳
                 "return_type" : return_type
-
             }
-            cppHttp_bridge.report_result(report_data)
+            bridge.report_result(report_data)
             write_log(f"已调用 cppHttp_bridge.report_result 上报结果，包含 UUID: {task_uuid}")
             # -----------------------------------------------------
 
@@ -126,7 +130,7 @@ def main():
             "timestamp": datetime.datetime.now().isoformat(),
             "return_type": return_type
         }
-        cppHttp_bridge.report_result(error_report_data)
+        bridge.report_result(error_report_data)
         write_log(f"已上报错误结果，包含 UUID: {task_uuid}")
         # ------------------------
         raise

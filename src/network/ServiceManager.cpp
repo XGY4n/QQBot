@@ -22,7 +22,7 @@ ServiceManager::ServiceManager()
         _monitorThread.detach();
         _logger->LOG_SUCCESS_SELF("Monitor thread started.");
 		_heartbeatTask = std::make_unique<HeartbeatTask>();
-
+        _boardcastTask = std::make_unique<BoardcastTask>();
         EventBusInstance::instance().subscribe<HeartbeatHttpCb>(
             [this](const HeartbeatHttpCb& event) {
                 try {
@@ -167,18 +167,31 @@ void ServiceManager::HandleTaskRev(std::string body)
 {
     nlohmann::json j = nlohmann::json::parse(body);
     std::string uuid = j["task_uuid"].get<std::string>();
+    std::string taskStatus = j["status"].get<std::string>();
     auto sendBackCopy = _TaskMapping.find(uuid);
-    if (sendBackCopy == _TaskMapping.end())
+     
+    if (taskStatus == "faild")
     {
-        _logger->LOG_SUCCESS_SELF("HandleTaskRev ERROR : " + uuid + "empty Task");
-
+        _logger->LOG_SUCCESS_SELF("HandleTaskRev ERROR : " + "status -> faild");
         return;
     }
-    ReleaseTask(uuid);
-    EventBusInstance::instance().publish(HttpCallbackInfo{ body, sendBackCopy->second.callInfo });
 
-}
+    if (taskStatus == "success")
+    {    
+        if (sendBackCopy == _TaskMapping.end())
+        {
+            _logger->LOG_SUCCESS_SELF("HandleTaskRev ERROR : " + uuid + "empty Task");
+            return;
+        }
+        ReleaseTask(uuid);
+        EventBusInstance::instance().publish(HttpCallbackInfo{ body, sendBackCopy->second.callInfo });
+        return;
+    }  
 
+    EventBusInstance::instance().publish(HttpCallbackInfo{ body });
+      
+}   
+ 
 
 void ServiceManager::MonitorTasks() {
     while (_running) 
@@ -204,7 +217,8 @@ void ServiceManager::MonitorTasks() {
 
                 if (duration > 3) 
                 {  
-                    _logger->LOG_WARNING_SELF("Task " + it->second.task_uuid + " (pid=" + std::to_string(it->second.pId) + ") is unresponsive. Killing...");
+                    _logger->LOG_WARNING_SELF("Task " + it->second.task_uuid + 
+                        " (pid=" + std::to_string(it->second.pId) + ") is unresponsive. Killing...");
 
                     ReleaseTask(it->second.task_uuid);
                     it = _TaskMapping.erase(it);
@@ -230,4 +244,9 @@ void ServiceManager::UpdateTaskrevTime(std::string body)
     if (it != _TaskMapping.end()) {
         it->second.lastHeartbeatTime = std::chrono::steady_clock::now();
     }
+}
+
+void ServiceManager::PostBoardcast(QMessage msg)
+{
+    _boardcastTask->BoardcastMessage(msg);
 }

@@ -31,10 +31,12 @@ public:
             });
 		_serviceManager->start(); // Start the service manager to handle tasks
     } 
+
     ~Executor() 
     { 
         stop(); 
     }  
+
     Executor(const Executor&) = delete;
     Executor& operator=(const Executor&) = delete;
 

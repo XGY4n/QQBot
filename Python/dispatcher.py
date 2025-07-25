@@ -6,10 +6,10 @@ import urllib.parse
 import socket
 import datetime
 import uuid
+import Botlog as logger
 
-import QQbot as bot
 def write_log(message: str):
-    bot.ipc_print(message)
+    logger.ipc_print(message)
 
 def is_port_available(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -115,5 +115,4 @@ def main(jsmsg, py_home):
     return finallymsg
 
 if __name__ == "__main__":
-    a = ""
     main(a)

@@ -60,6 +60,8 @@ private:
     bool FileExists(const std::string& filePath);
     std::string GetFullPath(const std::string& path);
 
+    void handleAtMessage(bool isAtback, const std::string& callInfoJson, const std::string& QQNumber, const std::string& name);
+
     bool ParseJsonInfo(const std::string& jsonStr,
         std::string& uuid,
         std::string& status,

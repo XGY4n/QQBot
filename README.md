@@ -45,7 +45,7 @@ cmake -DPYTHON_INCLUDE_DIR="your/python/39/include/path" .. -G "Visual Studio 17
     Symbol = #
 
     [@]
-    isAtback = false #回发QQ的字符串是否@回发送者
+    isAtback = false #回发QQ的字符串是否 @发送者
     ```
 * **PythonTask.ini**
     配置机器人将执行的 Python 任务列表。
@@ -81,7 +81,7 @@ cmake -DPYTHON_INCLUDE_DIR="your/python/39/include/path" .. -G "Visual Studio 17
   | STRING | 0   | Python 函数返回的是 UTF-8 编码的普通字符串 (`str`)，机器人将其作为文本消息发送。 |
   | WSTRING| 1  | Python 函数返回的是宽字符字符串（Unicode），适合包含多语言字符的文本。 |
   | FILE   | 2     | 返回一个文件路径，机器人会读取该文件并以文件形式发送到聊天窗口。 |
-  | QIMAGE | 3   | 返回的是一个图像对象（例如 Qt 的 QImage），机器人会将该图像以QQ图片的形式发送。 |
+  | QIMAGE | 3   | 返回的是一个图像文件(.bmp .jpg .gif .png)的路径，机器人会将该图像以QQ图片的形式发送。 |
   | AUTO   | 4     | 自动检测返回值类型，根据 Python 返回内容智能选择合适的处理方式。 |
   | UNKNOWN| 5  | 未知类型，通常表示返回值没有指定类型或类型未识别，机器人默认以字符串处理。 |
 
@@ -105,17 +105,40 @@ cmake -DPYTHON_INCLUDE_DIR="your/python/39/include/path" .. -G "Visual Studio 17
  3.打开该群聊的 消息管理器 窗口
 
 ### 7. python脚本编写规则：
- 推荐打印通过
+ 对于单次立即返回的功能:
  ```Python
  #./script/test.py
 import QQbot
 import time
-def test(input):
-    QQbot.bot_print(input)#{'Values': 'test'}
-    QQbot.bot_print(input['Values'])#'test'
-    return "testend"#回发testend
+def test(data):
+    bot = QQbot.BotSDK()
+    bot.print(data)#{'Values': 'test'}
+    bot.print(data['Values'])#'test'
+    return "test end"#回发testend
  ```
- 对应
+
+对于长期的持久功能
+ ```Python
+import QQbot
+import time
+def test(data):
+    bot = QQbot.BotSDK()
+    bot.print(data)#{'Values': 'test'}
+    bot.print(data['Values'])#'test'
+    while True:
+        msg = bot.get_latest_message()
+        if msg:
+            bot.print(f"主线程处理接收到的消息：{msg}")
+            bot.print(f"消息发送者名称：{msg.username}")
+            bot.print(f"消息发送者QQ号：{msg.email}")
+            bot.print(f"时间：{msg.time}")
+            bot.print(f"消息：{msg.content}")#'test'
+            bot.postMessage("Get once")#回发QQ默认字符串
+            bot.postMessage("some/path", "AUTO")#支持多类型见PythonTask.ini 返回类型说明
+        time.sleep(0.1)
+    return "long task end"
+```
+ 对应的PythonTask.ini节配置:
 ```ini
     [Py_load_0]              # 任务名称，随意起名，如：Py_load_0, AI, GPT 等
     Py_Call_Head = test.     # 触发机器人响应的命令前缀
@@ -123,5 +146,9 @@ def test(input):
     Py_Call_File = test      # Python 脚本文件名（不含 .py 后缀）
     Py_Call_Func = test      # Python 脚本中要调用的函数名
     Py_Return_type = str      # 函数返回值类型，目前支持 str
+```
+对应触发的QQ消息:
+```bash
+     #test.test
 ```
 

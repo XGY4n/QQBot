@@ -12,6 +12,7 @@
 #include <thread>
 #include <nlohmann/json.hpp>
 #include <Bus/EventBusInstance.h>
+#include <network/BoardcastTask.h>
 
 class ServiceManager 
 {
@@ -45,7 +46,7 @@ public:
     void MonitorTasks();
     void UpdateTaskrevTime(std::string body);
     void ReleaseTask(std::string uuid);
-
+    void PostBoardcast(QMessage msg);
 private:
     Botlog* _logger = Botlog::GetInstance();
 	std::map<std::string, HttpTaskInfo> _TaskMapping;
@@ -53,6 +54,8 @@ private:
     std::thread server_thread;
     std::unique_ptr<ResultHttpServer> _resultServer;
     std::unique_ptr<HeartbeatTask> _heartbeatTask;
+    std::unique_ptr<BoardcastTask> _boardcastTask;
+
     std::atomic<bool> _running{ false };
     std::mutex _taskMapMutex;
     std::thread _monitorThread;

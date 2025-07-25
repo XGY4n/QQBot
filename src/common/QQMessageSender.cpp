@@ -110,7 +110,7 @@ bool QQMessageSender::ParseJsonInfo(const std::string& jsonStr,
     std::string& uuid, std::string& status,
     std::string& timestamp, std::string& return_type,
     std::string& values)
-{
+{  
     try {
         auto j = nlohmann::json::parse(jsonStr);
         uuid = j["task_uuid"];
@@ -120,7 +120,7 @@ bool QQMessageSender::ParseJsonInfo(const std::string& jsonStr,
         values = j["result"].get<std::string>();
         _logger->LOG_SUCCESS_SELF(values);
         return true;
-    }
+    } 
     catch (const std::exception& e) {
         std::string err = "Exception: " + std::string(e.what()) + " HttpCallback : " + jsonStr;
         _logger->LOG_SUCCESS_SELF(err);
@@ -151,6 +151,26 @@ void QQMessageSender::SendImageOrFallback(const std::string& path)
         SendTextToGroup("Invalid image file: \"" + path + "\". Supported types: " + _kSupportedImageTypes + ".");
 }
 
+void QQMessageSender::handleAtMessage(bool isAtback, const std::string& callInfoJson, const std::string& QQNumber, const std::string& name)
+{
+    if (isAtback)
+    {
+        if (!QQNumber.empty())
+        {
+            const std::string& target = QQNumber;
+            const std::string& fallback = name;
+            sendMessageAt(IsNumeric(target) ? target : fallback);
+        }
+        else
+        {
+            auto j = nlohmann::json::parse(callInfoJson);
+            std::string number = j["QQnumber"];
+            std::string caller = j["Caller"];
+            sendMessageAt(IsNumeric(number) ? number : caller);
+        }
+    }
+}
+
 void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo)
 {
     std::string task_uuid, status, timestamp, return_type, values;
@@ -176,12 +196,7 @@ void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage ca
 
     auto returnType = it->second;
 
-    if (isAtback)
-    {
-        const std::string& target = callinfo.QQNumber;
-        const std::string& fallback = callinfo.name;
-        sendMessageAt(IsNumeric(target) ? target : fallback);
-    }
+    handleAtMessage(isAtback, JsonInfo, callinfo.QQNumber, callinfo.name);
 
     switch (returnType)
     {
