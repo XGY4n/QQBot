@@ -24,9 +24,17 @@ void UIAQQMessageExporter::start()
 {
     _alive = true;
 
-    CoInitialize(NULL);
+    HRESULT hr = CoInitialize(NULL);
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to initialize COM");
+    }
 
-    CoCreateInstance(__uuidof(CUIAutomation), NULL, CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation), (void**)&pAutomation);
+    hr = CoCreateInstance(__uuidof(CUIAutomation), NULL, CLSCTX_INPROC_SERVER,
+        __uuidof(IUIAutomation), (void**)&pAutomation);
+    if (FAILED(hr) || pAutomation == nullptr) {
+        CoUninitialize();
+        throw std::runtime_error("Failed to create UIAutomation instance");
+    }
 
     pAutomation->GetRootElement(&pRootElement);
 
