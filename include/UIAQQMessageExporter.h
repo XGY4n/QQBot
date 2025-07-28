@@ -10,6 +10,8 @@
 #include <mutex>
 #include <atlbase.h>
 #include <atlcomcli.h>
+#include <atlcom.h> 
+
 using ATL::CComPtr;
 
 class UIAQQMessageExporter : public IQQMessageExporter
@@ -21,24 +23,26 @@ public:
     std::string GetQQMessage();
     std::vector<std::string> GetQQMessages();
 public:
-    IUIAutomationElement* pRootElement;
-    IUIAutomation* pAutomation;
-    IUIAutomationCondition* pNameCondition;
-    IUIAutomationCondition* pAndCondition;
-    IUIAutomationCondition* pClassNameCondition;
-    IUIAutomationCondition* pCondition;
-    IUIAutomationElement* pListElement;
-    IUIAutomationElement* pWindow;
+    CComPtr<IUIAutomationElement> pRootElement;
+    CComPtr<IUIAutomation> pAutomation;
+    CComPtr<IUIAutomationCondition> pNameCondition;
+    CComPtr<IUIAutomationCondition> pAndCondition;
+    CComPtr<IUIAutomationCondition> pClassNameCondition;
+    CComPtr<IUIAutomationCondition> pCondition;
+    CComPtr<IUIAutomationElement> pListElement;
+    CComPtr<IUIAutomationElement> pWindow;
 private :
-    HRESULT ProcessUIAElement(IUIAutomationElement* pItemElement, std::vector<std::string>& debug_list_items);
+    HRESULT ProcessUIAElement(IUIAutomationElement* pItemElement, std::vector<std::string>& ItemsList);
     std::string ConvertBSTRToString(BSTR bstr);
     std::string GetQQMessagesLastOne();
     std::string PopMessage();
-    bool HandleFirstMessage();
 
     std::mutex _windowMutex;
     std::string lastStr;
     std::deque<std::string> _window;
     bool _firstTime = true;
+    std::condition_variable cv;
+    std::vector<std::string> ItemsList;
+
 };
 

@@ -34,48 +34,12 @@ UIAQQMessageExporter::UIAQQMessageExporter()
 
 UIAQQMessageExporter::~UIAQQMessageExporter()
 {
-    //pRootElement->Release();
-    //pAutomation->Release();
-    if (pRootElement) {
-        pRootElement->Release();
-        pRootElement = nullptr;
-    }
-    if (pAutomation) {
-        pAutomation->Release();
-        pAutomation = nullptr;
-    }
-    if (pNameCondition) {
-        pNameCondition->Release();
-        pNameCondition = nullptr;
-    }
-    if (pAndCondition) {
-        pAndCondition->Release();
-        pAndCondition = nullptr;
-    }
-    if (pClassNameCondition) {
-        pClassNameCondition->Release();
-        pClassNameCondition = nullptr;
-    }
-    if (pCondition) {
-        pCondition->Release();
-        pCondition = nullptr;
-    }
-    if (pListElement) {
-        pListElement->Release();
-        pListElement = nullptr;
-    }
-    if (pWindow) {
-        pWindow->Release();
-        pWindow = nullptr;
-    }
-
     std::lock_guard<std::mutex> lock(_windowMutex);
     _window.clear();
     CoUninitialize();
 }
 
 
-// 辅助函数：将 BSTR 转换为 std::string
 std::string UIAQQMessageExporter::ConvertBSTRToString(BSTR bstr)
 {
     if (bstr == nullptr)
@@ -84,23 +48,20 @@ std::string UIAQQMessageExporter::ConvertBSTRToString(BSTR bstr)
     }
 
     int bstrLength = SysStringLen(bstr);
-    if (bstrLength <= 0) // 长度为0或负数
+    if (bstrLength <= 0) 
     {
         return "";
     }
 
-    // 计算所需缓冲区大小
     int stringLength = WideCharToMultiByte(CP_ACP, 0, bstr, bstrLength, NULL, 0, NULL, NULL);
-    if (stringLength <= 0) // 转换失败或长度为0
+    if (stringLength <= 0) 
     {
         return "";
     }
 
-    char* buffer = new (std::nothrow) char[stringLength + 1]; // 使用 new (std::nothrow) 防止内存分配失败
+    char* buffer = new (std::nothrow) char[stringLength + 1];
     if (buffer == nullptr)
     {
-        // 内存分配失败处理
-        // 可以记录日志或抛出异常
         return "";
     }
 
@@ -111,105 +72,90 @@ std::string UIAQQMessageExporter::ConvertBSTRToString(BSTR bstr)
     return str;
 }
 
-// 辅助函数：处理单个 UI Automation 元素并收集数据
-HRESULT UIAQQMessageExporter::ProcessUIAElement(IUIAutomationElement* pItemElement, std::vector<std::string>& debug_list_items)
+HRESULT UIAQQMessageExporter::ProcessUIAElement(IUIAutomationElement* pItemElement, std::vector<std::string>& ItemsList)
 {
     BSTR bstrName = nullptr;
     HRESULT hr = pItemElement->get_CurrentName(&bstrName);
 
-    if (SUCCEEDED(hr) && bstrName != nullptr)
-    {
-        std::string str = ConvertBSTRToString(bstrName);
-        SysFreeString(bstrName); // release BSTR 
+    if (FAILED(hr) || bstrName == nullptr)
+        return S_FALSE;
 
-        if (!str.empty())
-        {
-            if (lastStr == str)
-            {
-                debug_list_items.clear(); 
-				return S_OK; 
-            }
-            debug_list_items.push_back(str);
-        }
+    std::string str = ConvertBSTRToString(bstrName);
+    SysFreeString(bstrName); // 释放 BSTR
+
+    if (str.empty())
+        return S_FALSE;
+
+    if (lastStr == str)
+    {
+        ItemsList.clear();
+        return S_OK;
     }
+
+    ItemsList.push_back(str);
     return hr;
 }
 
 std::vector<std::string> UIAQQMessageExporter::GetQQMessages()
 {
-    std::vector<std::string> debug_list_items;
+    if (!_firstTime && GetQQMessagesLastOne() == lastStr) {
+        return {};
+    }
+    ItemsList.clear();
+    if (!pListElement) return {};
 
-    if (pListElement != NULL)
+    IUIAutomationTreeWalker* pControlWalker = nullptr;
+    HRESULT hr = pAutomation->get_ControlViewWalker(&pControlWalker);
+    if (FAILED(hr) || !pControlWalker) return {};
+
+    IUIAutomationElement* pItemElement = nullptr;
+    hr = pControlWalker->GetFirstChildElement(pListElement, &pItemElement);
+    while (SUCCEEDED(hr) && pItemElement)
     {
-        IUIAutomationTreeWalker* pControlWalker = nullptr;
-        HRESULT hr = pAutomation->get_ControlViewWalker(&pControlWalker);
+        ProcessUIAElement(pItemElement, ItemsList);
 
-        if (SUCCEEDED(hr) && pControlWalker != NULL)
-        {
-            IUIAutomationElement* pItemElement = nullptr;
-            hr = pControlWalker->GetFirstChildElement(pListElement, &pItemElement);
+        IUIAutomationElement* pNextItemElement = nullptr;
+        hr = pControlWalker->GetNextSiblingElement(pItemElement, &pNextItemElement);
 
-            while (SUCCEEDED(hr) && pItemElement != NULL)
-            {
-                ProcessUIAElement(pItemElement, debug_list_items);
-
-                IUIAutomationElement* pNextItemElement = nullptr;
-                hr = pControlWalker->GetNextSiblingElement(pItemElement, &pNextItemElement);
-
-                pItemElement->Release();
-                pItemElement = pNextItemElement;
-            }
-            pControlWalker->Release();
-        }
+        pItemElement->Release();
+        pItemElement = pNextItemElement;
     }
 
-    // 处理 lastStr 和 _window 的逻辑
-    if (!debug_list_items.empty()) // 确保 debug_list_items 不为空
+    pControlWalker->Release();
+
+    if (!ItemsList.empty()) 
     {
-        lastStr = debug_list_items[debug_list_items.size() - 1];
+        lastStr = ItemsList[ItemsList.size() - 1];
     }
+    std::lock_guard<std::mutex> lock(_windowMutex);
 
-    { //lock 
-        std::lock_guard<std::mutex> lock(_windowMutex);
-        for (const auto& str : debug_list_items) // 使用 const auto& 避免不必要的拷贝
-        {
-            _window.push_back(str);
-        }
-    }
-    return debug_list_items;
+    for (const auto& str : ItemsList) 
+    {     
+        _window.push_back(str);
+    }		
+    cv.notify_one();
+
+    return ItemsList;
 }
 
 std::string UIAQQMessageExporter::GetQQMessage()
 {
-    if (HandleFirstMessage())
+    if (!_firstTime) {
+        lastStr = PopMessage();
         return lastStr;
-
-    return PopMessage();
-}
-
-bool UIAQQMessageExporter::HandleFirstMessage()
-{
-    std::lock_guard<std::mutex> lock(_windowMutex);
-
-    if (_firstTime)
-    {
-        std::string tempstr = GetQQMessagesLastOne(); 
-        _firstTime = false;
-        lastStr = tempstr;
-        return true;
     }
-    return false;
+
+    std::string tempstr = GetQQMessagesLastOne();
+    lastStr = tempstr;
+    _firstTime = false;
+    return lastStr;
 }
 
 std::string UIAQQMessageExporter::PopMessage()
 {
-    std::lock_guard<std::mutex> lock(_windowMutex);
-
-    if (_window.empty()) {
-        return "N/A";
-    }
-
-    std::string msg = _window.front();
+    std::unique_lock<std::mutex> lock(_windowMutex);
+    cv.wait(lock, [this] { return !_window.empty(); });
+    std::string msg = std::move(_window.front());    
     _window.pop_front();
     return msg;
 }
@@ -217,37 +163,35 @@ std::string UIAQQMessageExporter::PopMessage()
 
 std::string UIAQQMessageExporter::GetQQMessagesLastOne()
 {
-    //std::lock_guard<std::mutex> lock(_windowMutex);
     std::string error = "error";
-    if (pListElement != NULL)
-    {
-        // 获取列表控件的子元素
-        IUIAutomationTreeWalker* pControlWalker;
-        pAutomation->get_ControlViewWalker(&pControlWalker);
-        IUIAutomationElement* pItemElement;
-        pControlWalker->GetLastChildElement(pListElement, &pItemElement);
-        if (pItemElement != NULL)
-        {
-            // 获取并处理最后一个列表项的信息
-            BSTR bstrName;
-            pItemElement->get_CurrentName(&bstrName);
-            //wprintf(L"%s\n", bstrName);
+    if (pListElement == nullptr || pAutomation == nullptr)
+        return error;
 
-            std::wstring ws(bstrName, ::SysStringLen(bstrName));
-            ::SysFreeString(bstrName);
-            int bstrLength = SysStringLen(bstrName);
-            int stringLength = WideCharToMultiByte(CP_ACP, 0, bstrName, bstrLength, NULL, 0, NULL, NULL);
-            char* buffer = new char[stringLength + 1];
+    CComPtr<IUIAutomationTreeWalker> pControlWalker;
+    HRESULT hr = pAutomation->get_ControlViewWalker(&pControlWalker);
+    if (FAILED(hr) || !pControlWalker)
+        return error;
 
-            WideCharToMultiByte(CP_ACP, 0, bstrName, bstrLength, buffer, stringLength, NULL, NULL);
+    CComPtr<IUIAutomationElement> pItemElement;
+    hr = pControlWalker->GetLastChildElement(pListElement, &pItemElement);
+    if (FAILED(hr) || !pItemElement)
+        return error;
 
-            buffer[stringLength] = '\0';
-            std::string str(buffer);
-            pItemElement->Release();
-            delete[] buffer;
-            SysFreeString(bstrName);
-            return str;
-        }
-    }
-    return error;
+    CComBSTR bstrName;
+    hr = pItemElement->get_CurrentName(&bstrName);
+    if (FAILED(hr) || !bstrName)
+        return error;
+
+    int length = SysStringLen(bstrName);
+    if (length == 0)
+        return "";
+
+    int stringLength = WideCharToMultiByte(CP_ACP, 0, bstrName, length, NULL, 0, NULL, NULL);
+    if (stringLength == 0)
+        return "";
+
+    std::string result(stringLength, 0);
+    WideCharToMultiByte(CP_ACP, 0, bstrName, length, &result[0], stringLength, NULL, NULL);
+
+    return result;
 }
