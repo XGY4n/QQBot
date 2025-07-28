@@ -22,6 +22,8 @@ public:
 public:
     std::string GetQQMessage();
     std::vector<std::string> GetQQMessages();
+    void stop();
+    void start();
 public:
     CComPtr<IUIAutomationElement> pRootElement;
     CComPtr<IUIAutomation> pAutomation;
@@ -43,6 +45,8 @@ private :
     bool _firstTime = true;
     std::condition_variable cv;
     std::vector<std::string> ItemsList;
+
+    std::atomic<bool> _alive{ false };
 
 };
 

@@ -26,9 +26,7 @@ bool UIAWindowController::SimulateClick(int x, int y)
 	}
 	LPARAM lParam = MAKELPARAM(x, y);
 	PostMessage(_hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lParam);
-	Sleep(50);
 	PostMessage(_hwnd, WM_LBUTTONUP, 0, lParam);
-	Sleep(50);
 	return true;
 }
 

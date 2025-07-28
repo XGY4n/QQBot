@@ -49,12 +49,14 @@ void MessageFetcher::stop()
     if (_fetcherRunning.load())
     {
         _fetcherRunning = false;
+        _msgExporter->stop();
+
+        if (__refThread.joinable()) {
+            __refThread.join();
+        } 
         if (__fetcherThread.joinable()) {
             __fetcherThread.join();
         }
-        if (__refThread.joinable()) {
-            __refThread.join();
-        }        
         _formatter.reset();
         _windowController.reset();
         _msgExporter.reset();
@@ -119,6 +121,10 @@ void MessageFetcher::fetchLoop()
     {
         QMessage QQMessage;
         std::string raw = std::move(_msgExporter->GetQQMessage());
+        if (raw.empty())
+        {
+            continue;
+        }
         if (!tryParse(raw, QQMessage))
         {
 			_logger->LOG_WARNING_SELF("Failed to parse message: " + raw + "Fallback parse used");

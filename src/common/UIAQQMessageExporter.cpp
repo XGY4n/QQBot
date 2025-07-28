@@ -3,6 +3,27 @@
 
 UIAQQMessageExporter::UIAQQMessageExporter()
 {
+    start();
+}
+
+UIAQQMessageExporter::~UIAQQMessageExporter()
+{
+    stop();
+}
+
+void UIAQQMessageExporter::stop()
+{
+    std::lock_guard<std::mutex> lock(_windowMutex);
+	_alive = false;
+    _window.clear();
+    cv.notify_all();
+    CoUninitialize();
+}
+
+void UIAQQMessageExporter::start()
+{
+    _alive = true;
+
     CoInitialize(NULL);
 
     CoCreateInstance(__uuidof(CUIAutomation), NULL, CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation), (void**)&pAutomation);
@@ -29,16 +50,7 @@ UIAQQMessageExporter::UIAQQMessageExporter()
     pAutomation->CreatePropertyCondition(UIA_NamePropertyId, varProp, &pCondition);
 
     pWindow->FindFirst(TreeScope_Descendants, pCondition, &pListElement);
-
 }
-
-UIAQQMessageExporter::~UIAQQMessageExporter()
-{
-    std::lock_guard<std::mutex> lock(_windowMutex);
-    _window.clear();
-    CoUninitialize();
-}
-
 
 std::string UIAQQMessageExporter::ConvertBSTRToString(BSTR bstr)
 {
@@ -154,10 +166,14 @@ std::string UIAQQMessageExporter::GetQQMessage()
 std::string UIAQQMessageExporter::PopMessage()
 {
     std::unique_lock<std::mutex> lock(_windowMutex);
-    cv.wait(lock, [this] { return !_window.empty(); });
-    std::string msg = std::move(_window.front());    
-    _window.pop_front();
-    return msg;
+    cv.wait(lock, [this] { return !_window.empty() || !_alive ; });
+    if (!_window.empty())
+    {
+        std::string msg = std::move(_window.front());    
+        _window.pop_front();
+        return msg;
+    }
+    return std::string{};
 }
 
 
