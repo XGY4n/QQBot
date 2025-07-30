@@ -52,7 +52,7 @@ def start_health_server(port, task_uuid):
             pass
         
     reset_timer()
-    HTTPServer(("0.0.0.0", port), HealthHandler).serve_forever() 
+    HTTPServer(("127.0.0.1", port), HealthHandler).serve_forever() 
 
 def main():
     write_log("into ""worker.py main()")

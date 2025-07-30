@@ -2,11 +2,13 @@
 
 void HttpClientAdapter::sendHeartbeatTask(int port)
 {
-	if (_healthclient == nullptr)
-	{
-        _healthclient = std::make_unique<httplib::Client>("127.0.0.1", port);
-	}
-    _healthclient->Get("/health");
+    _healthclient = std::make_unique<httplib::Client>("127.0.0.1", port);
+
+    auto response = _healthclient->Get("/health");
+    if (response->status != 200) 
+    {
+        _logger->LOG_WARNING_SELF("GET 127.0.0.1:"+ std::to_string(port) + "/health");
+    } 
 }
 
 void HttpClientAdapter::BoardCastMessage(QMessage msg)
