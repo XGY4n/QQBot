@@ -27,6 +27,7 @@ private:
     bool readBotConfig();
     void watchParserEventBus();
     void initialize(const std::string& configPath);
+    void watchConfigHotReload(const std::string& dir, const std::string& filename);
 
 private:
     Botlog* _logger = Botlog::GetInstance();
@@ -38,4 +39,6 @@ private:
 	std::unique_ptr<Executor<QMessage>> _executor;
     std::unique_ptr<WinInIWrapper> _botConfig;
     ThreadPool _pool;
+    std::atomic<bool> _watchConfigStopFlag{ false };
+    std::thread _configWatcherThread;
 };

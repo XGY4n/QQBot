@@ -69,7 +69,7 @@ private:
         return old;
     }
     PyReflexCallInfo analysisPyReflexCallInfo();
-
+    void watchTaskConfigHotReload(const std::string& dir, const std::string& filename);
 	bool formatMessage(std::pair<std::string, std::string>& result, const std::string& input);
     bool checkInputFormat(const std::string& input, std::string& errMsg);
     bool GetcurrMapping( const std::string& callHead);
@@ -80,5 +80,6 @@ private:
     std::vector<WinInIWrapper::InIMapping<std::string>> _result;
 	WinInIWrapper::InIMapping<std::string> _currheadMapping;
     std::map<std::string, WinInIWrapper::InIMapping<std::string>> _reflexmap;
-
+    std::atomic<bool> _watchTaskConfigStopFlag{ false };
+    std::thread _taskConfigWatcherThread;
 };

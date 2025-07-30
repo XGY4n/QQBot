@@ -6,19 +6,30 @@ QQBot::QQBot()
 {
 	initialize("./ini/BotSetting.ini");
 	watchParserEventBus();
+	_configWatcherThread = std::thread(&QQBot::watchConfigHotReload, this, "./ini", "BotSetting.ini");
+
 }
 
 QQBot::QQBot(std::string ConfigPath) 
 	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr), _pool(4)
 {
 	initialize(ConfigPath);
+	watchParserEventBus();
+	fs::path p(ConfigPath);
+	std::string dir = p.parent_path().string();
+	std::string filename = p.filename().string();
+
+	_configWatcherThread = std::thread(&QQBot::watchConfigHotReload, this, dir, filename);
 }
 
 QQBot::~QQBot()
 {
-	stop();
+	_watchConfigStopFlag = true;
+	if (_configWatcherThread.joinable())
+		_configWatcherThread.join();
 	_parser.reset();
 	_executor.reset();
+	stop();
 }
 
 void QQBot::watchParserEventBus() 
@@ -110,6 +121,59 @@ void QQBot::stop()
 	_logger->LOG_SUCCESS_SELF("QQBot stopped.");
 	exit(0);
 }
+
+void QQBot::watchConfigHotReload(const std::string& dir, const std::string& filename)
+{
+	std::wstring wdir = std::wstring(dir.begin(), dir.end());
+	std::wstring wfile = std::wstring(filename.begin(), filename.end());
+
+	HANDLE hDir = CreateFileW(
+		wdir.c_str(),
+		FILE_LIST_DIRECTORY,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		nullptr,
+		OPEN_EXISTING,
+		FILE_FLAG_BACKUP_SEMANTICS,
+		nullptr
+	);
+
+	if (hDir == INVALID_HANDLE_VALUE)
+	{
+		_logger->LOG_ERROR_SELF("Failed to open directory handle for config watch.");
+		return;
+	}
+
+	char buffer[1024];
+	DWORD bytesReturned;
+
+	while (!_watchConfigStopFlag)
+	{
+		if (ReadDirectoryChangesW(
+			hDir,
+			buffer,
+			sizeof(buffer),
+			FALSE,
+			FILE_NOTIFY_CHANGE_LAST_WRITE,
+			&bytesReturned,
+			nullptr,
+			nullptr))
+		{
+			FILE_NOTIFY_INFORMATION* notify = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(buffer);
+			std::wstring changedFile(notify->FileName, notify->FileNameLength / sizeof(WCHAR));
+			if (changedFile == wfile)
+			{
+				_logger->LOG_SUCCESS_SELF("HotReload");
+				readBotConfig();
+				waitGroup();
+			}
+		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+	}
+
+	CloseHandle(hDir);
+}
+
 
 bool QQBot::readBotConfig()
 {

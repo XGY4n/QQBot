@@ -21,11 +21,67 @@ TaskBuilder::TaskBuilder()
 {
     _PyCfg = std::make_unique<WinInIWrapper>("./ini/PythonTask.ini");
     ReadPyTaskConfig();
+    _taskConfigWatcherThread = std::thread(&TaskBuilder::watchTaskConfigHotReload, this, "./ini", "PythonTask.ini");
+
 }
 
 TaskBuilder::~TaskBuilder()
 {
+    _watchTaskConfigStopFlag = true;
+    if (_taskConfigWatcherThread.joinable())
+        _taskConfigWatcherThread.join();
+}
 
+
+void TaskBuilder::watchTaskConfigHotReload(const std::string& dir, const std::string& filename)
+{
+    std::wstring wdir = std::wstring(dir.begin(), dir.end());
+    std::wstring wfile = std::wstring(filename.begin(), filename.end());
+
+    HANDLE hDir = CreateFileW(
+        wdir.c_str(),
+        FILE_LIST_DIRECTORY,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS,
+        nullptr
+    );
+
+    if (hDir == INVALID_HANDLE_VALUE)
+    {
+        _logger->LOG_ERROR_SELF("Failed to open directory handle for config watch.");
+        return;
+    }
+
+    char buffer[1024];
+    DWORD bytesReturned;
+
+    while (!_watchTaskConfigStopFlag)
+    {
+        if (ReadDirectoryChangesW(
+            hDir,
+            buffer,
+            sizeof(buffer),
+            FALSE,
+            FILE_NOTIFY_CHANGE_LAST_WRITE,
+            &bytesReturned,
+            nullptr,
+            nullptr))
+        {
+            FILE_NOTIFY_INFORMATION* notify = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(buffer);
+            std::wstring changedFile(notify->FileName, notify->FileNameLength / sizeof(WCHAR));
+            if (changedFile == wfile)
+            {
+                _logger->LOG_SUCCESS_SELF("PythonTask.ini HotReload");
+                ReadPyTaskConfig();
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
+
+    CloseHandle(hDir);
 }
 
 void TaskBuilder::ReadPyTaskConfig()
@@ -33,6 +89,13 @@ void TaskBuilder::ReadPyTaskConfig()
     this->_result = this->_PyCfg->ReadAllA();
     for (const auto& iniSection : this->_result)
     {
+        if (iniSection.parameters.size() != 5)
+        {
+			_logger->LOG_WARNING_SELF(" Section: [" + iniSection.section +
+                "] expects 5 parameters, but got " +
+                std::to_string(iniSection.parameters.size()) + ".");
+            continue;
+        }
         for (const auto& keyValue : iniSection.parameters)
         {
             if (keyValue.first.compare("Py_Call_Head") == 0)
