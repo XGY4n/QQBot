@@ -35,7 +35,7 @@
 #ifdef _CLASS_LOG_
 #define LOG(level, owner, message) \
         Botlog::Record(level, owner, \
-        std::string("[") + __FUNCTION__ + "] " + message)
+        std::string("[") + __FUNCTION__ + "]" + message)
 #else
 #define LOG(level, owner, message) Botlog::Record(level, owner, message)
 #endif
@@ -49,16 +49,27 @@
 #define LOG_SUCCESS_USERCALL(message) LOG(Botlog::Level::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, message)
 #define LOG_SUCCESS_UNDEF(message) LOG(Botlog::Level::LEVEL_SUCCESS, Botlog::OWNER_UNDEF, message)
 
-#define _WARNING  COLOR_YELLOW "[WARNING]" COLOR_RESET
-#define _ERROR    COLOR_RED "[ERROR]" COLOR_RESET
-#define _SUCCESS  COLOR_GREEN "[SUCCESS]" COLOR_RESET
-#define _SELF     COLOR_CYAN "[C++]" COLOR_RESET
-#define _CALL     COLOR_GREEN "[CALL]" COLOR_RESET
-#define _NOTCALL  COLOR_MAGENTA "[NOT CALL]" COLOR_RESET
-#define _INFO     COLOR_CYAN "[INFO]" COLOR_RESET
-#define _MIDCUT   " "
-#define _SYSTEM   COLOR_MAGENTA "[SYSTEM]" COLOR_RESET
+#define _WARNING  "[WARNING]"
+#define _ERROR    "[ERROR]"
+#define _SUCCESS  "[SUCCESS]"
+#define _SELF     "[C++]"
+#define _CALL     "[CALL]"
+#define _NOTCALL  "[NOT CALL]"
+#define _INFO     "[INFO]"
+#define _MIDCUT   ""
+#define _SYSTEM   "[SYSTEM]"
 #define _MSG      "[MESSAGE]"
+
+#define _WARNINGC  COLOR_YELLOW "[WARNING]" COLOR_RESET
+#define _ERRORC    COLOR_RED "[ERROR]" COLOR_RESET
+#define _SUCCESSC  COLOR_GREEN "[SUCCESS]" COLOR_RESET
+#define _SELFC     COLOR_CYAN "[C++]" COLOR_RESET
+#define _CALLC     COLOR_GREEN "[CALL]" COLOR_RESET
+#define _NOTCALLC  COLOR_MAGENTA "[NOT CALL]" COLOR_RESET
+#define _INFOC     COLOR_CYAN "[INFO]" COLOR_RESET
+#define _MIDCUTC   ""
+#define _SYSTEMC   COLOR_MAGENTA "[SYSTEM]" COLOR_RESET
+#define _MSGC      "[MESSAGE]"
 
 #define IS_DIGIT_STR(str) \
     ([](const string& s) -> bool { \
@@ -75,7 +86,7 @@
 #define _CALL_W     COLOR_GREEN_W L"[CALL]" COLOR_RESET_W
 #define _NOTCALL_W  COLOR_MAGENTA_W L"[NOT CALL]" COLOR_RESET_W
 #define _INFO_W     COLOR_CYAN_W L"[INFO]" COLOR_RESET_W
-#define _MIDCUT_W   L" "
+#define _MIDCUT_W   L""
 #define _SYSTEM_W   COLOR_MAGENTA_W L"[SYSTEM]" COLOR_RESET_W
 #define _MSG_W      L"[MESSAGE]"
 
@@ -88,9 +99,9 @@ static const char* kDaysAbbrev[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", 
 static const char* kMonths[12] = { "January", "February", "March", "April", "May", "June", "July", "August",
                                     "September", "October", "November", "December" };
 
-static const char* lev_section[3] = { _WARNING ,_ERROR, _SUCCESS };
-static const char* own_section[3] = { _SELF ,_CALL,  _NOTCALL };
-static const char* sys_section[2] = { _MSG ,_SYSTEM };
+static const char* lev_section[6] = { _WARNINGC, _ERRORC, _SUCCESSC, _WARNING, _ERROR, _SUCCESS };
+static const char* own_section[6] = { _SELFC, _CALLC, _NOTCALLC, _SELF, _CALL,  _NOTCALL };
+static const char* sys_section[4] = { _MSGC, _SYSTEMC, _MSG, _SYSTEM };
 
 
 static const wchar_t* lev_sectionW[3] = { _WARNING_W ,_ERROR_W, _SUCCESS_W };
@@ -154,6 +165,9 @@ public:
         LEVEL_WARNIGN = 0x00,
         LEVEL_ERROR = 0x01,
         LEVEL_SUCCESS = 0x02,
+        LEVEL_WARNIGNC = 0x03,
+        LEVEL_ERRORC = 0x04,
+        LEVEL_SUCCESSC = 0x05,
     }Level;
 
     typedef enum {
@@ -217,37 +231,35 @@ public:
         alignas(16) std::basic_ostream<CharT>& out = getOutputStream<CharT>();
         alignas(16) std::basic_ofstream<CharT> file2(infopath, std::ios::app);
         alignas(16)std::ofstream file(infopath, std::ios::app);
-        //const std::locale utf8_locale = std::locale(std::locale(), new std::codecvt_utf8<wchar_t>());
         // cmd ptint
         std::cout
             << sys_section[type]
             << lev_section[lev]
             << own_section[own]
-                << Now_time()
-                    << _MIDCUT;
-                out << msg << std::endl;
+            << Now_time()
+            << _MIDCUT;
+            out << msg << std::endl;
 
-                if (file.is_open())
-                {
-                    //file.imbue(utf8_locale);
-                    file << sys_section[type]
-                    << lev_section[lev]
-                    << own_section[own]
-                    << Now_time()
-                    << _MIDCUT << std::flush;
-                        //file2.imbue(utf8_locale);
-                    file2 << msg << std::endl;
-                    file2.close();
-                    return LOG_WRITE_SUCCESS;
-                }
-                else
-                {
-                    return LOG_WRITE_ERR;
-                }
-                file2.close();
-                file.close();
-                return LOG_WRITE_ERR;
+        if (file.is_open())
+        {
+            file << sys_section[type + 2]
+            << lev_section[lev + 3]
+            << own_section[own + 3]
+            << Now_time()
+            << _MIDCUT << std::flush;
+            file2 << msg << std::endl;
+            file2.close();
+            return LOG_WRITE_SUCCESS;
+        }
+        else
+        {
+            return LOG_WRITE_ERR;
+        }
+        file2.close();
+        file.close();
+        return LOG_WRITE_ERR;
     }
+
     template<typename CharT>
     Botlog::Logstat Record(Botlog::Level lev, Botlog::Owner own, std::basic_string<CharT>& msg)
     {
@@ -260,7 +272,7 @@ public:
         //const std::locale utf8_locale = std::locale(std::locale(), new std::codecvt_utf8<wchar_t>());
         // cmd ptint
         std::cout
-            << _SYSTEM
+            << _SYSTEMC
             << lev_section[lev]
             << own_section[own]
             << Now_time()
@@ -269,13 +281,11 @@ public:
 
         if (file.is_open())
         {
-            //file.imbue(utf8_locale);
             file << _SYSTEM
-                << lev_section[lev]
-                << own_section[own]
+                << lev_section[lev + 3]
+                << own_section[own + 3]
                 << Now_time()
                 << _MIDCUT << std::flush;
-                //file2.imbue(utf8_locale);
                 file2 << msg << std::endl;
                 file2.close();
             return LOG_WRITE_SUCCESS;
