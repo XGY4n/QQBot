@@ -21,22 +21,22 @@ sdk_path = "./QQbot.py"
 if sdk_path not in sys.path:
     sys.path.insert(0, sdk_path)
     
-def kill_self():
-    print("[Python] 超过 10 秒未收到 C++ GET 请求，退出进程")
+def kill_self(task_uuid):
+    write_log(f"超过 10 秒未收到 C++ GET 请求，退出进程 uuid : {task_uuid}")
     os.kill(os.getpid(), signal.SIGTERM)
 
-def reset_timer():
+def reset_timer(task_uuid):
     global heartbeat_timer
     if heartbeat_timer:
         heartbeat_timer.cancel()
-    heartbeat_timer = threading.Timer(TIMEOUT_SECONDS, kill_self)
+    heartbeat_timer = threading.Timer(TIMEOUT_SECONDS, kill_self, args=(task_uuid,))
     heartbeat_timer.start()
     
 def start_health_server(port, task_uuid):
     class HealthHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             try:
-                reset_timer()
+                reset_timer(task_uuid)
                 payload = {'uuid': task_uuid}
                 resp = requests.post("http://127.0.0.1:11451/health", json=payload)
                 
@@ -51,7 +51,7 @@ def start_health_server(port, task_uuid):
         def log_message(self, format, *args):
             pass
         
-    reset_timer()
+    reset_timer(task_uuid)
     HTTPServer(("127.0.0.1", port), HealthHandler).serve_forever() 
 
 def main():
