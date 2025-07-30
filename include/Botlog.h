@@ -1,4 +1,3 @@
-
 #pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -19,7 +18,20 @@
 #include <codecvt>
 #include <iterator>
 #include <mutex>
-//+ typeid(*this).name()+ "::"
+
+#define COLOR_RESET   "\033[0m"
+#define COLOR_RED     "\033[31m"
+#define COLOR_GREEN   "\033[32m"
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_CYAN    "\033[36m"
+#define COLOR_MAGENTA "\033[35m"
+#define COLOR_RESET_W   L"\033[0m"
+#define COLOR_RED_W     L"\033[31m"
+#define COLOR_GREEN_W   L"\033[32m"
+#define COLOR_YELLOW_W  L"\033[33m"
+#define COLOR_CYAN_W    L"\033[36m"
+#define COLOR_MAGENTA_W L"\033[35m"
+
 #ifdef _CLASS_LOG_
 #define LOG(level, owner, message) \
         Botlog::Record(level, owner, \
@@ -37,16 +49,16 @@
 #define LOG_SUCCESS_USERCALL(message) LOG(Botlog::Level::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, message)
 #define LOG_SUCCESS_UNDEF(message) LOG(Botlog::Level::LEVEL_SUCCESS, Botlog::OWNER_UNDEF, message)
 
-#define _WANRING "[WARNING]"
-#define _ERROR "[ERROR]"
-#define _SUCCESS "[SUCCESS]"
-#define _SELF  "[C++]"
-#define _CALL "[CALL]"
-#define _NOTCALL "[NOT CALL]"
-#define _INFO "[INFO]"
-#define _MIDCUT ""
-#define _SYSTEM "[SYSTEM]"
-#define _MSG "[MESSAGE]"
+#define _WARNING  COLOR_YELLOW "[WARNING]" COLOR_RESET
+#define _ERROR    COLOR_RED "[ERROR]" COLOR_RESET
+#define _SUCCESS  COLOR_GREEN "[SUCCESS]" COLOR_RESET
+#define _SELF     COLOR_CYAN "[C++]" COLOR_RESET
+#define _CALL     COLOR_GREEN "[CALL]" COLOR_RESET
+#define _NOTCALL  COLOR_MAGENTA "[NOT CALL]" COLOR_RESET
+#define _INFO     COLOR_CYAN "[INFO]" COLOR_RESET
+#define _MIDCUT   " "
+#define _SYSTEM   COLOR_MAGENTA "[SYSTEM]" COLOR_RESET
+#define _MSG      "[MESSAGE]"
 
 #define IS_DIGIT_STR(str) \
     ([](const string& s) -> bool { \
@@ -56,14 +68,16 @@
         return true; \
     })(str)
 
-#define _WANRINGW L"[WARNING]"
-#define _ERRORW L"[ERROR]"
-#define _SUCCESSW L"[SUCCESS]"
-#define _SELFW  L"[C++]"
-#define _CALLW L"[CALL]"
-#define _NOTCALLW L"[NOT CALL]"
-#define _INFOW L"[INFO]"
-#define _MIDCUTW L" "
+#define _WARNING_W  COLOR_YELLOW_W L"[WARNING]" COLOR_RESET_W
+#define _ERROR_W    COLOR_RED_W L"[ERROR]" COLOR_RESET_W
+#define _SUCCESS_W  COLOR_GREEN_W L"[SUCCESS]" COLOR_RESET_W
+#define _SELF_W     COLOR_CYAN_W L"[C++]" COLOR_RESET_W
+#define _CALL_W     COLOR_GREEN_W L"[CALL]" COLOR_RESET_W
+#define _NOTCALL_W  COLOR_MAGENTA_W L"[NOT CALL]" COLOR_RESET_W
+#define _INFO_W     COLOR_CYAN_W L"[INFO]" COLOR_RESET_W
+#define _MIDCUT_W   L" "
+#define _SYSTEM_W   COLOR_MAGENTA_W L"[SYSTEM]" COLOR_RESET_W
+#define _MSG_W      L"[MESSAGE]"
 
 #define _STR 1
 #define _WSTR 0
@@ -74,13 +88,13 @@ static const char* kDaysAbbrev[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", 
 static const char* kMonths[12] = { "January", "February", "March", "April", "May", "June", "July", "August",
                                     "September", "October", "November", "December" };
 
-static const char* lev_section[3] = { _WANRING ,_ERROR, _SUCCESS };
+static const char* lev_section[3] = { _WARNING ,_ERROR, _SUCCESS };
 static const char* own_section[3] = { _SELF ,_CALL,  _NOTCALL };
 static const char* sys_section[2] = { _MSG ,_SYSTEM };
 
 
-static const wchar_t* lev_sectionW[3] = { _WANRINGW ,_ERRORW, _SUCCESSW };
-static const wchar_t* own_sectionW[3] = { _SELFW ,_CALLW,  _NOTCALLW };
+static const wchar_t* lev_sectionW[3] = { _WARNING_W ,_ERROR_W, _SUCCESS_W };
+static const wchar_t* own_sectionW[3] = { _SELF_W ,_CALL_W,  _NOTCALL_W };
 
 static const char* kMonthsAbbrev[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 static const char* kDefaultDateTimeFormat = "[%d-%02d-%02d %02d:%02d:%02d]";
@@ -113,7 +127,7 @@ enum class Level : int {
 inline std::string GetSimpleClassName(const std::string& full_name) {
     size_t pos = full_name.rfind("::");
     if (pos != std::string::npos)
-        return full_name.substr(pos + 2);  // Ìø¹ý "::"
+        return full_name.substr(pos + 2);
     return full_name;
 }
 class Botlog
@@ -157,7 +171,6 @@ public:
     std::string Now_time();
     std::wstring Now_timeW();
     std::string Days();
-    void Temp_log(std::string &Ins);
     template<typename CharT>
     std::basic_ostream<CharT>& getOutputStream()
     {
@@ -311,7 +324,7 @@ public:
 
             std::string final_line = oss.str();
 
-            std::cout << "\r" << final_line << std::string(95 - final_line.length(), ' ') << std::flush;
+            std::cout << "\r" << final_line << std::string(120 - final_line.length(), ' ') << std::flush;
 
             return LOG_WRITE_SUCCESS;
     }
@@ -371,32 +384,6 @@ public:
             << msg << std::endl;
 
         return LOG_WRITE_SUCCESS;
-        //static std::mutex log_mutex;
-        //std::lock_guard<std::mutex> lock(log_mutex);  // RAII
-        //std::string infopath = this->logpath + Days() + ".log";
-        //alignas(16) std::basic_ofstream<CharT> file2(infopath, std::ios::app);
-        //alignas(16) std::ofstream file(infopath, std::ios::app);
-        //const std::locale utf8_locale = std::locale(std::locale(), new std::codecvt_utf8<wchar_t>());
-        //if (file.is_open())
-        //{
-        //    file.imbue(utf8_locale);
-        //    file << _INFO
-        //        << lev_section[lev]
-        //        << own_section[own]
-        //        << Now_time()
-        //        << _MIDCUT << std::flush;
-        //    file2.imbue(utf8_locale);
-        //    file2 << msg << std::endl;
-        //    file2.close();
-        //    return LOG_WRITE_SUCCESS;
-        //}
-        //else
-        //{
-        //    return LOG_WRITE_ERR;
-        //}
-        //file2.close();
-        //file.close();
-        //return LOG_WRITE_ERR;
     }
 
 private:
@@ -406,4 +393,3 @@ private:
 
 
 };
-//extern std::unique_ptr<Botlog> logger;

@@ -142,29 +142,3 @@ std::string Botlog::Days()
     NowTime = NowTime + strTime;
     return NowTime ;
 }
-
-//void Botlog::Temp_log(std::string& Ins)
-//{
-//    std::string filename = "./log/" + Days() + ".log";
-//    std::ifstream input(filename);
-//    if (!input.is_open()) {
-//        //std::cerr << "Failed to open file " << filename << '\n';
-//        Send_StringTEXT_Message("Failed to open file ");
-//        return;
-//    }
-//
-//    std::string temp_filename = "./log/temp.log";
-//    std::ofstream output(temp_filename);
-//    if (!output.is_open()) {
-//        //std::cerr << "Failed to create file " << temp_filename << '\n';
-//        Send_StringTEXT_Message("Failed to create file ");
-//        return;
-//    }
-//
-//    std::copy(std::istreambuf_iterator<char>(input),
-//        std::istreambuf_iterator<char>(),
-//        std::ostreambuf_iterator<char>(output));
-//
-//    input.close();
-//    output.close();
-//}
