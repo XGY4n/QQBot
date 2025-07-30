@@ -225,19 +225,19 @@ public:
     template<typename CharT>
     Botlog::Logstat Record(Botlog::Type type, Botlog::Level lev, Botlog::Owner own, std::basic_string<CharT>& msg)
     {
-        static std::mutex log_mutex;
         std::lock_guard<std::mutex> lock(log_mutex);  // RAII
         std::string infopath = this->logpath + Days() + ".log";
         alignas(16) std::basic_ostream<CharT>& out = getOutputStream<CharT>();
         alignas(16) std::basic_ofstream<CharT> file2(infopath, std::ios::app);
         alignas(16)std::ofstream file(infopath, std::ios::app);
-        // cmd ptint
-        std::cout
-            << sys_section[type]
+
+        std::ostringstream oss;
+        oss << sys_section[type]
             << lev_section[lev]
             << own_section[own]
             << Now_time()
             << _MIDCUT;
+            std::cout << oss.str();
             out << msg << std::endl;
 
         if (file.is_open())
@@ -263,21 +263,19 @@ public:
     template<typename CharT>
     Botlog::Logstat Record(Botlog::Level lev, Botlog::Owner own, std::basic_string<CharT>& msg)
     {
-        static std::mutex log_mutex;
-        std::lock_guard<std::mutex> lock(log_mutex);  // RAII
+        std::lock_guard<std::mutex> lock(log_mutex);
         std::string infopath = this->logpath + Days() + ".log";
         alignas(16) std::basic_ostream<CharT>& out = getOutputStream<CharT>();
         alignas(16) std::basic_ofstream<CharT> file2(infopath, std::ios::app);
         alignas(16)std::ofstream file(infopath, std::ios::app);
-        //const std::locale utf8_locale = std::locale(std::locale(), new std::codecvt_utf8<wchar_t>());
-        // cmd ptint
-        std::cout
-            << _SYSTEMC
+        std::ostringstream oss;
+        oss<< _SYSTEMC
             << lev_section[lev]
             << own_section[own]
             << Now_time()
             << _MIDCUT;
-            out << msg << std::endl;
+        std::cout << oss.str();
+        out << msg << std::endl;
 
         if (file.is_open())
         {
@@ -369,7 +367,6 @@ public:
     template<typename CharT>
     Botlog::Logstat filelog(Botlog::Level lev, Botlog::Owner own, std::basic_string<CharT>& msg)
     {
-        static std::mutex log_mutex;
         std::lock_guard<std::mutex> lock(log_mutex);
 
         std::string infopath = this->logpath + Days() + ".log";
@@ -400,6 +397,6 @@ private:
     bool isFileExists_fopen(std::string& name);
 private:
     std::string logpath = "./log/";
-
+    std::mutex log_mutex;
 
 };

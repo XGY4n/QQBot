@@ -11,7 +11,7 @@ struct QMessage {
 
     std::string toString() const {
         std::ostringstream oss;
-        oss << "[" << DataTime << "]" << name << "(" << QQNumber << ") " << message;
+        oss << "[" << DataTime << "] " << name << " (" << QQNumber << ") " << message;
         return oss.str();
     }
 };
