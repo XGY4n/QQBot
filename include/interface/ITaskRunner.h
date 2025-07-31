@@ -22,6 +22,7 @@ public :
 		std::string reportUrl;
 		PyReturnType returnType;
 		QMessage callInfo;
+		Task taskcallback;
 	}ServiceCallbackInfo;
 	//typedef ServiceCallbackInfo PSCBI;
 public:

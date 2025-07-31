@@ -98,5 +98,6 @@ PythonTaskRunner::ServiceCallbackInfo PythonTaskRunner::BuildTCB(const char* Tas
     info.status = 1;
     info.returnType = ReturnTypeMap[j["return_type"].get<std::string>()];
     info.callInfo = task.callInfo;
+    info.taskcallback = task;
     return info;
 }
