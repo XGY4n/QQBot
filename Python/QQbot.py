@@ -103,7 +103,7 @@ class BotSDK:
 
     def get_latest_message(self):
         try:
-            return self.message_queue.get(timeout=1)  # 等待 1 秒，避免空转
+            return self.message_queue.get()
         except:
             return None
 
