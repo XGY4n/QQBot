@@ -118,8 +118,18 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
     httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
     httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
     httpTask.callInfo = ServiceTask.callInfo;
-    _TaskMapping.insert({ ServiceTask.task_uuid, httpTask});
-    _logger->LOG_SUCCESS_SELF("Task with ID " + std::to_string(ServiceTask.pId) + " registered successfully.");
+    for (auto it = _TaskMapping.begin(); it != _TaskMapping.end(); ++it) 
+    {
+        const std::string& uuid = it->first;
+        HttpTaskInfo& taskInfo = it->second;
+        if (taskInfo.callback.taskcallback.Jsonstring != ServiceTask.taskcallback.Jsonstring)
+        {
+            _TaskMapping.insert({ ServiceTask.task_uuid, httpTask });
+            _logger->LOG_SUCCESS_SELF("Task with ID " + std::to_string(ServiceTask.pId) + " registered successfully.");
+            return;
+        }
+    }
+    _logger->LOG_ERROR_SELF("script_path with Function " + ServiceTask.taskcallback.Jsonstring);
 }
 
 bool GetProcessHANDLE(DWORD pid, HANDLE& pHANDLE)
