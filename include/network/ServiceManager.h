@@ -16,23 +16,26 @@
 
 class ServiceManager 
 {
-    enum Type
+    using uuid = std::string;
+    using TaskHash = size_t;
+    enum TaskType
     {
 		Long = 0, 
 		Short = 1, 
     };
     struct HttpTaskInfo {
         unsigned int pId = 0;
-        std::string task_uuid = "";
+        uuid task_uuid = "";
         short status = 0;
 		std::string reportUrl = "";
 		int heartbeatPort = 0;
-		Type taskType = Short;
+		TaskType taskType = Short;
         PythonTaskRunner::PyReturnType returnType;
         std::chrono::steady_clock::time_point taskBuildTime;
         std::chrono::steady_clock::time_point lastHeartbeatTime;
         PythonTaskRunner::ServiceCallbackInfo callback; 
         QMessage callInfo;
+        TaskHash hash;
     };
 
 public:
@@ -47,9 +50,11 @@ public:
     void UpdateTaskrevTime(std::string body);
     void ReleaseTask(std::string uuid);
     void PostBoardcast(QMessage msg);
+    void KillProcess(DWORD processId);
 private:
     Botlog* _logger = Botlog::GetInstance();
-	std::map<std::string, HttpTaskInfo> _TaskMapping;
+	std::map<uuid, HttpTaskInfo> _TaskMapping;
+    std::map<TaskHash, Task> _longTaskMapping;
     std::unique_ptr<httplib::Server> server_ptr; 
     std::thread server_thread;
     std::unique_ptr<ResultHttpServer> _resultServer;

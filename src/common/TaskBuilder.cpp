@@ -14,7 +14,8 @@ std::map<std::string, TaskBuilder::KeyValue> TaskBuilder::keyMap = {
     {"Py_Call_Path", TaskBuilder::Py_Call_Path},
     {"Py_Call_File", TaskBuilder::Py_Call_File},
     {"Py_Call_Func", TaskBuilder::Py_Call_Fun},
-    {"Py_Return_type", TaskBuilder::Py_Return_type}
+    {"Py_Return_type", TaskBuilder::Py_Return_type},
+    {"Py_Long_Task", TaskBuilder::Py_Long_Task}
 };
 
 TaskBuilder::TaskBuilder()
@@ -89,7 +90,7 @@ void TaskBuilder::ReadPyTaskConfig()
     this->_result = this->_PyCfg->ReadAllA();
     for (const auto& iniSection : this->_result)
     {
-        if (iniSection.parameters.size() != 5)
+        if (iniSection.parameters.size() < 5)
         {
 			_logger->LOG_WARNING_SELF(" Section: [" + iniSection.section +
                 "] expects 5 parameters, but got " +
@@ -171,8 +172,15 @@ TaskBuilder::PyReflexCallInfo TaskBuilder::analysisPyReflexCallInfo()
         case Py_Return_type:
             analysis.returnType = keyValue.second;
             break;
+        case Py_Long_Task:
+            if (keyValue.second == "long")
+            {
+                analysis.taskType = 0;
+            }
+            break;
         }
     }
+    analysis.taskName = _currheadMapping.section;
     return analysis;
 }
 
@@ -235,6 +243,8 @@ Task TaskBuilder::build(const QMessage rawMessage)
 	task.fileName = reflexinfo.callFile;
 	task.argument = expr;
     task.callInfo = rawMessage;
+    task.TaskName = reflexinfo.taskName;
+    task.TaskType = reflexinfo.taskType;
     auto test = expr.c_str();
     std::error_code ec;
     std::filesystem::path abs_path = std::filesystem::absolute(task.pythonScriptPath, ec);

@@ -13,6 +13,8 @@ struct Task
     QMessage callInfo;
     unsigned int messageId;
     bool status = false;
+    short TaskType;
+    std::string TaskName;
     std::string pythonScriptPath;
     std::string commandToRun;  
 	std::string functionName = "main";
@@ -25,6 +27,8 @@ class TaskBuilder
 public:
     struct PyReflexCallInfo 
     {
+		short taskType = 1;
+        std::string taskName;
         std::string callHead;
         std::string callPath;
         std::string callFile;
@@ -37,7 +41,8 @@ public:
         Py_Call_Path,
         Py_Call_File,
         Py_Call_Fun,
-        Py_Return_type
+        Py_Return_type,
+        Py_Long_Task
     };
 
     enum PyReturnType {

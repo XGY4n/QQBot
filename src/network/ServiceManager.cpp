@@ -1,7 +1,5 @@
 #include "network/ServiceManager.h"
 
-using namespace std;
-
 ServiceManager::ServiceManager(std::string reportUrl)
 {
     // Constructor implementation here
@@ -99,15 +97,15 @@ void ServiceManager::stop()
     if (_monitorThread.joinable()) {
         _monitorThread.join(); // 等待线程结束
     }
-    _logger->LOG_SUCCESS_SELF("ServiceManager monitor thread stopped.");    
     _logger->LOG_SUCCESS_SELF("ServiceManager::stop() finished.");
 
 }
 
 void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask)
 {
-    _logger->LOG_SUCCESS_SELF("RegisterTask called for task ID: " + std::to_string(ServiceTask.pId) + " and name: " + ServiceTask.task_uuid);
+    _logger->LOG_WARNING_SELF("RegisterTask called for task ID: " + std::to_string(ServiceTask.pId) + " and name: " + ServiceTask.task_uuid);
 	HttpTaskInfo httpTask;
+    std::hash<std::string> hash_fn;
 	httpTask.callback = ServiceTask;
 	httpTask.pId = ServiceTask.pId;
 	httpTask.task_uuid = ServiceTask.task_uuid;
@@ -118,18 +116,23 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
     httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
     httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
     httpTask.callInfo = ServiceTask.callInfo;
-    for (auto it = _TaskMapping.begin(); it != _TaskMapping.end(); ++it) 
-    {
-        const std::string& uuid = it->first;
-        HttpTaskInfo& taskInfo = it->second;
-        if (taskInfo.callback.taskcallback.Jsonstring != ServiceTask.taskcallback.Jsonstring)
-        {
-            _TaskMapping.insert({ ServiceTask.task_uuid, httpTask });
-            _logger->LOG_SUCCESS_SELF("Task with ID " + std::to_string(ServiceTask.pId) + " registered successfully.");
-            return;
-        }
+	httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
+    TaskHash hash_value = hash_fn(ServiceTask.taskcallback.Jsonstring);
+    httpTask.hash = hash_value;
+    auto result = _longTaskMapping.insert({ hash_value, ServiceTask.taskcallback });
+    if (!result.second) {
+        KillProcess(ServiceTask.pId);
+        _logger->LOG_ERROR_SELF(
+            "Duplicate long task detected! KILL\n"
+            "  -> Hash: " + std::to_string(hash_value) + "\n"
+            "  -> Function JSON: " + ServiceTask.taskcallback.Jsonstring + "\n"
+            "  -> Process ID terminated: " + std::to_string(ServiceTask.pId)
+        );
+        return;
     }
-    _logger->LOG_ERROR_SELF("script_path with Function " + ServiceTask.taskcallback.Jsonstring);
+    _TaskMapping.insert({ ServiceTask.task_uuid, httpTask });
+    _logger->LOG_SUCCESS_SELF("Inserted task: task_uuid : " + ServiceTask.task_uuid
+        + "Function JSON : " + ServiceTask.taskcallback.Jsonstring);
 }
 
 bool GetProcessHANDLE(DWORD pid, HANDLE& pHANDLE)
@@ -143,19 +146,9 @@ bool GetProcessHANDLE(DWORD pid, HANDLE& pHANDLE)
     return true;
 }
 
-void ServiceManager::ReleaseTask(std::string uuid)
+void ServiceManager::KillProcess(DWORD processId)
 {
-    auto TaskInfo = _TaskMapping.find(uuid);
-
-    if (TaskInfo == _TaskMapping.end())
-    {
-        _logger->LOG_ERROR_SELF("Task with uuid " + uuid + " not found.");
-        return;
-    }
-
     HANDLE pHANDLE = NULL;
-    DWORD processId = TaskInfo->second.pId;
-
     if (GetProcessHANDLE(processId, pHANDLE))
     {
         _logger->LOG_SUCCESS_SELF("PID " + std::to_string(processId) + " is still active. Attempting to terminate.");
@@ -169,6 +162,18 @@ void ServiceManager::ReleaseTask(std::string uuid)
     {
         _logger->LOG_SUCCESS_SELF("PID " + std::to_string(processId) + " is not active or could not be opened. Assuming it's done.");
     }
+}
+
+void ServiceManager::ReleaseTask(std::string uuid)
+{
+    auto TaskInfo = _TaskMapping.find(uuid);
+
+    if (TaskInfo == _TaskMapping.end())
+    {
+        _logger->LOG_ERROR_SELF("Task with uuid " + uuid + " not found.");
+        return;
+    }
+	KillProcess(TaskInfo->second.pId);
     _logger->LOG_SUCCESS_SELF("Released task uuid : " + uuid);
 }
 
@@ -197,13 +202,12 @@ void ServiceManager::HandleTaskRev(std::string body)
         EventBusInstance::instance().publish(HttpCallbackInfo{ body, sendBackCopy->second.callInfo });
         return;
     }  
-
     EventBusInstance::instance().publish(HttpCallbackInfo{ body });
-      
 }   
  
 
-void ServiceManager::MonitorTasks() {
+void ServiceManager::MonitorTasks() 
+{
     while (_running) 
     {
         auto now = std::chrono::steady_clock::now();
@@ -211,17 +215,6 @@ void ServiceManager::MonitorTasks() {
             std::lock_guard<std::mutex> lock(_taskMapMutex);
             for (auto it = _TaskMapping.begin(); it != _TaskMapping.end(); ) 
             {
-                //if (it->second.taskType == Short)
-                //{
-                //    auto duration = std::chrono::duration_cast<std::chrono::seconds>(
-                //        now - it->second.taskBuildTime).count();
-                //    if (duration > 30)
-                //    {
-                //        ReleaseTask(it->second.task_uuid);
-                //        it = _TaskMapping.erase(it);
-                //        continue;
-                //    }
-                //}
                 auto duration = std::chrono::duration_cast<std::chrono::seconds>(
                     now - it->second.lastHeartbeatTime).count();
 
