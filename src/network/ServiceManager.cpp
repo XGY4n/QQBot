@@ -105,7 +105,6 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
 {
     _logger->LOG_WARNING_SELF("RegisterTask called for task ID: " + std::to_string(ServiceTask.pId) + " and name: " + ServiceTask.task_uuid);
 	HttpTaskInfo httpTask;
-    std::hash<std::string> hash_fn;
 	httpTask.callback = ServiceTask;
 	httpTask.pId = ServiceTask.pId;
 	httpTask.task_uuid = ServiceTask.task_uuid;
@@ -117,7 +116,7 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
     httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
     httpTask.callInfo = ServiceTask.callInfo;
 	httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
-    TaskHash hash_value = hash_fn(ServiceTask.taskcallback.Jsonstring);
+    TaskHash hash_value = std::hash<std::string>{}(ServiceTask.taskcallback.Jsonstring);
     httpTask.hash = hash_value;
     auto result = _longTaskMapping.insert({ hash_value, ServiceTask.taskcallback });
     if (!result.second) {

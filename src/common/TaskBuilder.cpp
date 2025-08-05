@@ -103,6 +103,11 @@ void TaskBuilder::ReadPyTaskConfig()
             {
                 _reflexmap.insert(std::make_pair(keyValue.second, iniSection));
             }
+            if (keyValue.first.compare("AUTO_Start") == 0)
+            {
+                auto AutoHead = iniSection.parameters.find("Py_Call_Head");
+                _autoStartTasks.insert(AutoHead->second + "AUTOSTART");
+            }
             _logger->LOG_SUCCESS_SELF(keyValue.first + "=>" + keyValue.second);
         }
     }
@@ -207,7 +212,7 @@ Task TaskBuilder::build(const QMessage rawMessage)
     std::string errMsg;
 
     if (!checkInputFormat(inputMsg, errMsg)) {
-        _logger->LOG_ERROR_SELF("formatMessage failed with: " + errMsg);
+        _logger->LOG_WARNING_SELF("formatMessage failed with: " + errMsg);
         task.status = false;
         return task;
     }

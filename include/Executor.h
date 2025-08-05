@@ -30,6 +30,7 @@ public:
                 _sender->sendMessageAsJson(event.HttpBody, event.callInfo);//sendMessageAsJson
             });
 		_serviceManager->start(); // Start the service manager to handle tasks
+        SetupAutoStart();
     } 
 
     ~Executor() 
@@ -92,13 +93,12 @@ public:
     }
 
 private:
-
+    void SetupAutoStart();
     void HandleTask();  
     void SubmitTask(Task task);
     bool BuildTask(std::optional<T> task, Task& taskout);
     std::optional<T> GetNextTask();
     void ProcessSingleTask(std::optional<T> original_task_data);
-
     Botlog* _logger = Botlog::GetInstance();
 
     mutable std::mutex _mutex;

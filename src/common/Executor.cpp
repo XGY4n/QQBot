@@ -55,7 +55,6 @@ void Executor<T>::ProcessSingleTask(std::optional<T> original_task_data) {
 
     Task builtTask;
     if (!BuildTask(original_task_data, builtTask)) {
-        _logger->LOG_ERROR_SELF("BuildTask Error not a Task");
         if (original_task_data.has_value()) {
             _serviceManager->PostBoardcast(*original_task_data);
         }
@@ -101,47 +100,17 @@ void Executor<T>::SubmitTask(Task task)
     }
     _serviceManager->RegisterTask(taskinfo_opt.value());
 }
+template<typename T>
+
+void Executor<T>::SetupAutoStart()
+{
+    for (auto task : _pyTaskBuilder->GetAutoStartTasks())
+    {
+        std::string sender = "TaskDispatcher";
+        std::string id = std::to_string(std::hash<std::string>{}(task));
+        std::string timestamp = std::to_string(std::time(nullptr));
+        QMessage msg{ sender, id, task, timestamp };
+        this->push(msg);
+    }
+}
 template class Executor<QMessage>;
-//template<typename T>
-//void Executor<T>::HandleTask()
-//{
-//    while (_running)
-//    {
-//        std::optional<T> task;
-//        {
-//            std::unique_lock<std::mutex> lock(_mutex);
-//            _cv.wait(lock, [this] {
-//                return !_queue.empty() || !_running;
-//                });
-//
-//            if (!_running)
-//                break;
-//
-//            task = std::move(_queue.front());
-//            _queue.pop();
-//        }
-//
-//        if (!task)
-//        {
-//            _logger->LOG_ERROR_SELF("Received null task.");
-//            continue;
-//        }
-//
-//        Task builtTask;
-//        if (!BuildTask(task, builtTask))
-//        {
-//            _logger->LOG_ERROR_SELF("Task build failed.");
-//            continue;
-//        }
-//
-//        if (builtTask.status)
-//        {
-//            _logger->LOG_SUCCESS_SELF("Task built successfully. SubmitTask: " + builtTask.messageId);
-//            SubmitTask(builtTask);
-//        }
-//        else
-//        {
-//            _logger->LOG_ERROR_SELF("Built task is invalid or status is false. ");
-//        }
-//    }
-//}

@@ -8,6 +8,7 @@
 #include <limits>
 #include <nlohmann/json.hpp>
 #include <converSTR.h>
+#include <set>
 struct Task 
 {
     QMessage callInfo;
@@ -28,6 +29,7 @@ public:
     struct PyReflexCallInfo 
     {
 		short taskType = 1;
+        bool autoStart = false;
         std::string taskName;
         std::string callHead;
         std::string callPath;
@@ -61,6 +63,10 @@ public:
 
     Task build(const QMessage rawMessage);
     void ReadPyTaskConfig();
+    std::set<std::string> GetAutoStartTasks() const {
+        return _autoStartTasks;
+    }
+
 private:
 #ifdef max
 #undef max
@@ -87,4 +93,5 @@ private:
     std::map<std::string, WinInIWrapper::InIMapping<std::string>> _reflexmap;
     std::atomic<bool> _watchTaskConfigStopFlag{ false };
     std::thread _taskConfigWatcherThread;
+	std::set<std::string> _autoStartTasks;
 };
