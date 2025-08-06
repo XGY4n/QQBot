@@ -14,13 +14,15 @@ struct Task
     QMessage callInfo;
     unsigned int messageId;
     bool status = false;
-    short TaskType;
+    short TaskType = 0;
+    bool isUnique;
     std::string TaskName;
     std::string pythonScriptPath;
     std::string commandToRun;  
 	std::string functionName = "main";
 	std::string fileName;
     std::string argument;
+    std::string head;
     std::string Jsonstring;
 };
 class TaskBuilder
@@ -28,8 +30,9 @@ class TaskBuilder
 public:
     struct PyReflexCallInfo 
     {
-		short taskType = 1;
+		short taskType = 0;
         bool autoStart = false;
+        bool isUnique = false;
         std::string taskName;
         std::string callHead;
         std::string callPath;
@@ -44,7 +47,8 @@ public:
         Py_Call_File,
         Py_Call_Fun,
         Py_Return_type,
-        Py_Long_Task
+        Py_Task_Type,
+        IsUnique
     };
 
     enum PyReturnType {
@@ -88,7 +92,7 @@ public:
 private:
     Botlog* _logger = Botlog::GetInstance();
     std::unique_ptr<WinInIWrapper> _PyCfg;
-    std::vector<WinInIWrapper::InIMapping<std::string>> _result;
+    std::set<WinInIWrapper::InIMapping<std::string>> _result;
 	WinInIWrapper::InIMapping<std::string> _currheadMapping;
     std::map<std::string, WinInIWrapper::InIMapping<std::string>> _reflexmap;
     std::atomic<bool> _watchTaskConfigStopFlag{ false };

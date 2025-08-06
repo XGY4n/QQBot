@@ -15,7 +15,8 @@ std::map<std::string, TaskBuilder::KeyValue> TaskBuilder::keyMap = {
     {"Py_Call_File", TaskBuilder::Py_Call_File},
     {"Py_Call_Func", TaskBuilder::Py_Call_Fun},
     {"Py_Return_type", TaskBuilder::Py_Return_type},
-    {"Py_Long_Task", TaskBuilder::Py_Long_Task}
+    {"Py_Task_Type" , TaskBuilder::Py_Task_Type},
+    {"isUnique", TaskBuilder::IsUnique}
 };
 
 TaskBuilder::TaskBuilder()
@@ -87,8 +88,10 @@ void TaskBuilder::watchTaskConfigHotReload(const std::string& dir, const std::st
 
 void TaskBuilder::ReadPyTaskConfig()
 {
-    this->_result = this->_PyCfg->ReadAllA();
-    for (const auto& iniSection : this->_result)
+    auto temoVec = this->_PyCfg->ReadAllA();
+    _result = std::set<WinInIWrapper::InIMapping<std::string>>(temoVec.begin(), temoVec.end());
+
+    for (const auto& iniSection : _result)
     {
         if (iniSection.parameters.size() < 5)
         {
@@ -106,7 +109,9 @@ void TaskBuilder::ReadPyTaskConfig()
             if (keyValue.first.compare("AUTO_Start") == 0)
             {
                 auto AutoHead = iniSection.parameters.find("Py_Call_Head");
-                _autoStartTasks.insert(AutoHead->second + "AUTOSTART");
+                auto AutoArg = iniSection.parameters.find("AUTO_Start");
+
+                _autoStartTasks.insert(AutoHead->second + AutoArg->second);
             }
             _logger->LOG_SUCCESS_SELF(keyValue.first + "=>" + keyValue.second);
         }
@@ -160,13 +165,15 @@ TaskBuilder::PyReflexCallInfo TaskBuilder::analysisPyReflexCallInfo()
     TaskBuilder::PyReflexCallInfo analysis;
     for (const auto& keyValue : _currheadMapping.parameters)
     {
+        std::cout << keyValue.first << std::endl;
+
         switch (keyMap[keyValue.first])
         {
         case Py_Call_Head:
             analysis.callHead = keyValue.second;
             break;
         case Py_Call_Path:
-            analysis.callPath= keyValue.second;
+            analysis.callPath= std::filesystem::absolute(keyValue.second).string();
             break;
         case Py_Call_File:
             analysis.callFile = keyValue.second;
@@ -177,10 +184,16 @@ TaskBuilder::PyReflexCallInfo TaskBuilder::analysisPyReflexCallInfo()
         case Py_Return_type:
             analysis.returnType = keyValue.second;
             break;
-        case Py_Long_Task:
-            if (keyValue.second == "long")
+        case Py_Task_Type:
+            if (keyValue.second == "short")
             {
-                analysis.taskType = 0;
+                analysis.taskType = 1;
+            }
+            break;
+        case IsUnique:
+            if (keyValue.second == "true")
+            {
+                analysis.isUnique = true;
             }
             break;
         }
@@ -250,6 +263,9 @@ Task TaskBuilder::build(const QMessage rawMessage)
     task.callInfo = rawMessage;
     task.TaskName = reflexinfo.taskName;
     task.TaskType = reflexinfo.taskType;
+    task.head = reflexinfo.callHead;
+    task.commandToRun = rawMessage.message;
+    task.isUnique = reflexinfo.isUnique;
     auto test = expr.c_str();
     std::error_code ec;
     std::filesystem::path abs_path = std::filesystem::absolute(task.pythonScriptPath, ec);

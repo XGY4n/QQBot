@@ -47,9 +47,64 @@ ServiceManager::~ServiceManager()
 
 }
 
+void ServiceManager::KillDuplicateTask(const HttpTaskInfo& task, TaskHash hash)
+{
+    KillProcess(task.pId);
+    _logger->LOG_ERROR_SELF(
+        "Duplicate long task detected! KILL\n"
+        "  -> Hash: " + std::to_string(hash) + "\n"
+        "  -> Function JSON: " + task.callback.taskcallback.Jsonstring + "\n"
+        "  -> Process ID terminated: " + std::to_string(task.pId)
+    );
+}
+
+ServiceManager::HttpTaskInfo ServiceManager::CreateHttpTask(const PythonTaskRunner::ServiceCallbackInfo& ServiceTask)
+{
+    HttpTaskInfo httpTask;
+    httpTask.callback = ServiceTask;
+    httpTask.pId = ServiceTask.pId;
+    httpTask.task_uuid = ServiceTask.task_uuid;
+    httpTask.status = ServiceTask.status;
+    httpTask.reportUrl = ServiceTask.reportUrl;
+    httpTask.returnType = ServiceTask.returnType;
+    httpTask.heartbeatPort = ServiceTask.heartbeat_port;
+    httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
+    httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
+    httpTask.callInfo = ServiceTask.callInfo;
+    httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
+    return httpTask;
+}
+
+bool ServiceManager::RegisterLongTask(HttpTaskInfo& task)
+{
+    TaskHash hash_value = task.callback.taskcallback.isUnique
+        ? CalcUniqueTaskHash(task.callback.taskcallback)
+        : CalcNormalTaskHash(task.callback.taskcallback);
+
+    task.hash = hash_value;
+
+    auto& targetMap = task.callback.taskcallback.isUnique ? _uniqueTaskMapping : _longTaskMapping;
+    auto result = targetMap.insert({ hash_value, task.callback.taskcallback });
+    return result.second;
+}
+
+ServiceManager::TaskHash ServiceManager::CalcUniqueTaskHash(const Task& cb)
+{
+    return std::hash<std::string>{}(cb.pythonScriptPath + cb.fileName + cb.TaskName);
+}
+
+ServiceManager::TaskHash ServiceManager::CalcNormalTaskHash(const Task& cb)
+{
+    return std::hash<std::string>{}(cb.pythonScriptPath + cb.fileName + cb.TaskName + cb.commandToRun);
+}
+
+bool ServiceManager::IsLongTask(const HttpTaskInfo& task) const
+{
+    return task.taskType == Long;
+}
+
 void ServiceManager::start()
 {            
-
     try
     {    
         _logger->LOG_SUCCESS_SELF("ServiceManager::start() called. Starting HTTP server thread...");
@@ -103,36 +158,82 @@ void ServiceManager::stop()
 
 void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask)
 {
-    _logger->LOG_WARNING_SELF("RegisterTask called for task ID: " + std::to_string(ServiceTask.pId) + " and name: " + ServiceTask.task_uuid);
-	HttpTaskInfo httpTask;
-	httpTask.callback = ServiceTask;
-	httpTask.pId = ServiceTask.pId;
-	httpTask.task_uuid = ServiceTask.task_uuid;
-	httpTask.status = ServiceTask.status;
-	httpTask.reportUrl = ServiceTask.reportUrl;
-    httpTask.returnType = ServiceTask.returnType;
-    httpTask.heartbeatPort = ServiceTask.heartbeat_port;
-    httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
-    httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
-    httpTask.callInfo = ServiceTask.callInfo;
-	httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
-    TaskHash hash_value = std::hash<std::string>{}(ServiceTask.taskcallback.Jsonstring);
-    httpTask.hash = hash_value;
-    auto result = _longTaskMapping.insert({ hash_value, ServiceTask.taskcallback });
-    if (!result.second) {
-        KillProcess(ServiceTask.pId);
-        _logger->LOG_ERROR_SELF(
-            "Duplicate long task detected! KILL\n"
-            "  -> Hash: " + std::to_string(hash_value) + "\n"
-            "  -> Function JSON: " + ServiceTask.taskcallback.Jsonstring + "\n"
-            "  -> Process ID terminated: " + std::to_string(ServiceTask.pId)
-        );
-        return;
+    _logger->LOG_WARNING_SELF("RegisterTask called for task PID: " + std::to_string(ServiceTask.pId) + " and name: " + ServiceTask.task_uuid);
+
+    HttpTaskInfo httpTask = CreateHttpTask(ServiceTask);
+
+    if (IsLongTask(httpTask)) {
+        if (!RegisterLongTask(httpTask)) {
+            KillDuplicateTask(httpTask, httpTask.hash);
+            return;
+        }
     }
+
     _TaskMapping.insert({ ServiceTask.task_uuid, httpTask });
-    _logger->LOG_SUCCESS_SELF("Inserted task: task_uuid : " + ServiceTask.task_uuid
-        + "Function JSON : " + ServiceTask.taskcallback.Jsonstring);
+    _logger->LOG_SUCCESS_SELF("Inserted task: task_uuid : " + ServiceTask.task_uuid + " Function JSON : " + ServiceTask.taskcallback.Jsonstring);
 }
+
+//void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask)
+//{
+//    _logger->LOG_WARNING_SELF("RegisterTask called for task PID: " + std::to_string(ServiceTask.pId) + " and name: " + ServiceTask.task_uuid);
+//	HttpTaskInfo httpTask;
+//	httpTask.callback = ServiceTask;
+//	httpTask.pId = ServiceTask.pId;
+//	httpTask.task_uuid = ServiceTask.task_uuid;
+//	httpTask.status = ServiceTask.status;
+//	httpTask.reportUrl = ServiceTask.reportUrl;
+//    httpTask.returnType = ServiceTask.returnType;
+//    httpTask.heartbeatPort = ServiceTask.heartbeat_port;
+//    httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
+//    httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
+//    httpTask.callInfo = ServiceTask.callInfo;
+//	httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
+//    if (ServiceTask.taskcallback.isUnique && httpTask.taskType == Long)//唯一任务 : 整个机器人生命周期内同一时刻只存在一个的任务 与指令无关 与文件名称强相关
+//    {
+//        TaskHash hash_value = std::hash<std::string>{}
+//            (ServiceTask.taskcallback.pythonScriptPath +
+//            ServiceTask.taskcallback.fileName + 
+//            ServiceTask.taskcallback.TaskName);//唯一性校验为 节名称 + 文件路径 + 文件名称 设计上一个文件对应一个功能 不允许一个文件调用两个不同函数的情况出现
+//
+//        httpTask.hash = hash_value;
+//        auto result = _uniqueTaskMapping.insert({ hash_value, ServiceTask.taskcallback });
+//        if (!result.second) {
+//            KillProcess(ServiceTask.pId);
+//            _logger->LOG_ERROR_SELF(
+//                "Duplicate Unique long task detected! KILL\n"
+//                "  -> Hash: " + std::to_string(hash_value) + "\n"
+//                "  -> Function JSON: " + ServiceTask.taskcallback.Jsonstring + "\n"
+//                "  -> Process ID terminated: " + std::to_string(ServiceTask.pId)
+//            );
+//            return;
+//        }
+//    }
+//	else if(httpTask.taskType == Long)// 非唯一任务 : 允许同一时刻存在多个同名任务 但是对于长任务 xxx.yyy 需要同时校验xxx.yyy 如果xxx.yyy 存在 xxx.zzz还可以拉起来
+//    {
+//        TaskHash hash_value = std::hash<std::string>{}
+//            (ServiceTask.taskcallback.pythonScriptPath +
+//            ServiceTask.taskcallback.fileName +
+//            ServiceTask.taskcallback.TaskName+ ServiceTask.taskcallback.commandToRun);
+//        httpTask.hash = hash_value;
+//        auto result = _longTaskMapping.insert({ hash_value, ServiceTask.taskcallback });
+//        if (!result.second) {
+//            KillProcess(ServiceTask.pId);
+//            _logger->LOG_ERROR_SELF(
+//                "Duplicate long task detected! KILL\n"
+//                "  -> Hash: " + std::to_string(hash_value) + "\n"
+//                "  -> Function JSON: " + ServiceTask.taskcallback.Jsonstring + "\n"
+//                "  -> Process ID terminated: " + std::to_string(ServiceTask.pId)
+//            );
+//            return;
+//        }
+//    }
+//
+//    // 短任务直接执行
+//
+//    _TaskMapping.insert({ ServiceTask.task_uuid, httpTask });
+//    _logger->LOG_SUCCESS_SELF("Inserted task: task_uuid : " + ServiceTask.task_uuid
+//        + "Function JSON : " + ServiceTask.taskcallback.Jsonstring);
+//}
 
 bool GetProcessHANDLE(DWORD pid, HANDLE& pHANDLE)
 {
@@ -173,6 +274,8 @@ void ServiceManager::ReleaseTask(std::string uuid)
         return;
     }
 	KillProcess(TaskInfo->second.pId);
+    _uniqueTaskMapping.erase(TaskInfo->second.hash);
+    _longTaskMapping.erase(TaskInfo->second.hash);
     _logger->LOG_SUCCESS_SELF("Released task uuid : " + uuid);
 }
 
@@ -214,9 +317,19 @@ void ServiceManager::MonitorTasks()
             std::lock_guard<std::mutex> lock(_taskMapMutex);
             for (auto it = _TaskMapping.begin(); it != _TaskMapping.end(); ) 
             {
+                if (it->second.taskType == Short)
+                {
+                    auto duration = std::chrono::duration_cast<std::chrono::seconds>(
+                        now - it->second.taskBuildTime).count();
+                    if (duration > 5)
+                    {
+                        ReleaseTask(it->second.task_uuid);
+                        it = _TaskMapping.erase(it);
+                        continue;
+                    }
+                }
                 auto duration = std::chrono::duration_cast<std::chrono::seconds>(
                     now - it->second.lastHeartbeatTime).count();
-
                 if (duration > 3) 
                 {  
                     _logger->LOG_WARNING_SELF("Task " + it->second.task_uuid + 

@@ -53,12 +53,15 @@ cmake -DPYTHON_INCLUDE_DIR="your/python/39/include/path" .. -G "Visual Studio 17
     示例配置：
 
     ```ini
-    [Py_load_0]              # 任务名称，随意起名，如：Py_load_0, AI, GPT 等
-    Py_Call_Head = test.     # 触发机器人响应的命令前缀
-    Py_Call_Path = ./script/ # Python 脚本文件所在的目录
-    Py_Call_File = test      # Python 脚本文件名（不含 .py 后缀）
-    Py_Call_Func = test      # Python 脚本中要调用的函数名
-    Py_Return_type = str      # 函数返回值类型，目前支持 str
+    [Py_load_0]              # 唯一名称 必填 任务名称，随意起名，如：Py_load_0, AI, GPT 等
+    Py_Call_Head = test.     # 必填 触发机器人响应的命令前缀
+    Py_Call_Path = ./script/ # 必填 Python 脚本文件所在的目录
+    Py_Call_File = test      # 必填 Python 脚本文件名（不含 .py 后缀）
+    Py_Call_Func = test      # 必填 Python 脚本中要调用的函数名
+    Py_Return_type = str     # 必填 函数返回值类型，目前支持 str
+    AUTO_Start = xxx         # 可选 随机器人自动启动时传参 不填写则不会自动启动
+    isUnique = true          # 可选 false/true是否唯一 默认不填写为false 
+    Py_Task_Type = short     # 可选 long/short 是否为短任务 默认不填写为长任务 短任务会在5s内把python脚本强制终止
     ```
 
     **说明：**
@@ -126,7 +129,7 @@ def test(data):
     bot.print(data)#{'Values': 'test'}
     bot.print(data['Values'])#'test'
     while True:
-        msg = bot.get_latest_message()
+        msg = bot.get_latest_message()#阻塞 接收后续所有#开头的QQ消息
         if msg:
             bot.print(f"主线程处理接收到的消息：{msg}")
             bot.print(f"消息发送者名称：{msg.username}")
@@ -145,10 +148,48 @@ def test(data):
     Py_Call_Path = ./script/ # Python 脚本文件所在的目录
     Py_Call_File = test      # Python 脚本文件名（不含 .py 后缀）
     Py_Call_Func = test      # Python 脚本中要调用的函数名
-    Py_Return_type = str      # 函数返回值类型，目前支持 str
+    Py_Return_type = str     # 函数返回值类型
 ```
 对应触发的QQ消息:
 ```bash
      #test.test
 ```
+### 8.长任务 短任务 唯一性机制详解
 
+在机器人系统中，任务的配置决定了其行为模式，主要涉及**任务类型（长/短任务）**和**唯一性**两个核心概念。理解这些配置项能帮助你更好地控制任务的生命周期和执行逻辑。
+
+#### 任务类型：长任务与短任务
+
+任务类型由 `Py_Task_Type` 参数决定，可选值为 `long` 或 `short`。
+
+* **短任务 (`Py_Task_Type = short`)**：
+    * **定义**：旨在执行快速、一次性的操作。
+    * **生命周期**：任务会在启动后，无论是否完成，都将在**5秒后被 C++ 端强制终止**。这是一种安全机制，可以防止脚本因意外挂起而占用系统资源。
+    * **适用场景**：非常适合用于那些只需要短暂执行、快速返回结果的脚本，例如查询、状态报告或简单的计算。
+* **长任务 (`Py_Task_Type` 未配置或配置为 `long`)**：
+    * **定义**：旨在执行持续性、需要长时间运行的操作。
+    * **生命周期**：长任务不会被系统自动终止。它会一直运行，直到满足以下任一条件：
+        1.  任务通过 `return` 返回。
+        2.  任务**失去心跳**。
+        3.  被用户或系统主动终止。
+    * **适用场景**：适用于需要持续监控、后台运行或处理复杂流程的脚本，例如保持与外部服务的连接、长时间数据处理等。
+
+---
+
+#### 任务唯一性：仅适用于长任务
+
+任务唯一性由 `isUnique` 参数决定，可选值为 `true` 或 `false`，默认值为 `false`。**此机制仅对长任务有效。**
+
+* **唯一性长任务 (`isUnique = true`)**：
+    * **定义**：在整个机器人生命周期内，同一时间只允许存在一个特定任务的实例。
+    * **工作机制**：当一个被标记为唯一的长任务被拉起后，系统会生成一个**哈希值**来唯一标识它。如果此时再次尝试拉起相同的任务，系统会检测到哈希值冲突，并**拒绝新任务的启动**。
+    * **哈希值构成**：哈希值通常由`任务名称`、`脚本路径`和`文件名`等关键信息组合而成。
+    * **示例**：如果 `Py_load_0` 是一个唯一的长任务，第一次通过 `test.xxx` 启动后，再次输入 `test.yyy`或者`test.xxx` 试图启动它，系统会识别出这是同一个任务，并阻止新实例的创建。
+* **非唯一性长任务 (`isUnique = false` 或未配置)**：
+    * **定义**：允许同一任务在同一时刻存在多个独立的实例。
+    * **工作机制**：每次拉起任务，即使是使用相同的任务不同的配置，系统都会将其视为一个全新的任务，并允许其独立运行。
+    * **示例**：如果 `Py_load_0` 是非唯一的长任务，第一次通过 `test.xxx` 启动后，再次输入 `test.yyy` 同样会成功启动一个全新的 `Py_load_0` 实例，两者互不影响。但是再次输入`test.xxx`会被拒绝。
+* **短任务与唯一性**：
+    * **短任务**不具备唯一性。由于短任务生命周期极短，它们的执行是独立的，因此没有必要为其设置唯一性限制。
+
+理解这些配置能帮助你根据任务的实际需求，灵活地配置和管理你的机器人任务。

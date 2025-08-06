@@ -181,7 +181,7 @@ void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage ca
         return;
     }
 
-    if (status == "faild")
+    if (status == "failed")
     {
         sendMessage("Task failed:\n" + JsonInfo);
         return;

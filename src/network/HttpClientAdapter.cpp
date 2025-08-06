@@ -2,13 +2,24 @@
 
 void HttpClientAdapter::sendHeartbeatTask(int port)
 {
-    _healthclient = std::make_unique<httplib::Client>("127.0.0.1", port);
-
-    auto response = _healthclient->Get("/health");
-    if (response->status != 200) 
+    try 
     {
-        _logger->LOG_WARNING_SELF("GET 127.0.0.1:"+ std::to_string(port) + "/health");
-    } 
+        _healthclient = std::make_unique<httplib::Client>("127.0.0.1", port);
+
+        auto response = _healthclient->Get("/health");
+        if (!response) {
+            _logger->LOG_WARNING_SELF("GET /health failed: response is null. Port: " + std::to_string(port));
+        }
+        else if (response->status != 200) 
+        {
+            _logger->LOG_WARNING_SELF("GET 127.0.0.1:"+ std::to_string(port) + "/health");
+        } 
+    }
+    catch (const std::exception& e)
+    {
+        _logger->LOG_ERROR_SELF(std::string("Exception: ") + e.what());
+    }
+
 }
 
 void HttpClientAdapter::BoardCastMessage(QMessage msg)

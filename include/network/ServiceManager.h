@@ -35,7 +35,7 @@ class ServiceManager
         std::chrono::steady_clock::time_point lastHeartbeatTime;
         PythonTaskRunner::ServiceCallbackInfo callback; 
         QMessage callInfo;
-        TaskHash hash;
+        TaskHash hash = 0;
     };
 
 public:
@@ -51,10 +51,17 @@ public:
     void ReleaseTask(std::string uuid);
     void PostBoardcast(QMessage msg);
     void KillProcess(DWORD processId);
+    HttpTaskInfo CreateHttpTask(const PythonTaskRunner::ServiceCallbackInfo& ServiceTask);
+    bool RegisterLongTask(HttpTaskInfo& task);
+    void KillDuplicateTask(const HttpTaskInfo& task, TaskHash hash);
+    TaskHash CalcUniqueTaskHash(const Task& cb);
+    TaskHash CalcNormalTaskHash(const Task& cb);
+    bool IsLongTask(const HttpTaskInfo& task) const;
 private:
     Botlog* _logger = Botlog::GetInstance();
 	std::map<uuid, HttpTaskInfo> _TaskMapping;
     std::map<TaskHash, Task> _longTaskMapping;
+    std::map<TaskHash, Task> _uniqueTaskMapping;
     std::unique_ptr<httplib::Server> server_ptr; 
     std::thread server_thread;
     std::unique_ptr<ResultHttpServer> _resultServer;

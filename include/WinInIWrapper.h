@@ -179,6 +179,9 @@ public:
     struct InIMapping {
         T_INI section;
         std::map<T_INI, T_INI> parameters;
+        bool operator<(const InIMapping& other) const {
+            return section < other.section;
+        }
     };
     template<typename T_INI>
     struct INI_PAIR {
