@@ -49,6 +49,18 @@ void QQBot::watchParserEventBus()
 			setupMessageProcessingPipeline(); 
 			_logger->LOG_SUCCESS_SELF("Async reinitialization task completed.");
 		});
+
+	EventBusInstance::instance().subscribe<FetchMessageEvent>(
+		[this](const FetchMessageEvent& event) {
+			if (_executor)
+			{
+				_executor->push(event.msg);
+			}
+			else
+			{
+				_logger->LOG_ERROR_SELF("Executor is not initialized.");
+			}
+		});
 }
 
 void QQBot::initialize(const std::string& configPath) {
@@ -197,17 +209,6 @@ bool QQBot::readBotConfig()
 void QQBot::setupMessageProcessingPipeline()
 {
 	_parser = ParserFactory::Create(_msgCenter, _symbol);
-	_parser->SetMessageCallback([this](const QMessage msg)
-	{
-		if (_executor) 
-		{
-			_executor->push(msg);
-		}
-		else 
-		{
-			_logger->LOG_ERROR_SELF("Executor is not initialized.");
-		}
-	});
 	_parser->start();
 	
 }

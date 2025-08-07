@@ -44,12 +44,14 @@ public:
     ~ServiceManager();
     void start();
     void stop();
-	void RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask);//PythonTaskRunner::PythonServiceCallbackInfo ServiceTask
+	void RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask);
     void HandleTaskRev(std::string body);
     void MonitorTasks();
     void UpdateTaskrevTime(std::string body);
     void ReleaseTask(std::string uuid);
     void PostBoardcast(QMessage msg);
+
+private:
     void KillProcess(DWORD processId);
     HttpTaskInfo CreateHttpTask(const PythonTaskRunner::ServiceCallbackInfo& ServiceTask);
     bool RegisterLongTask(HttpTaskInfo& task);
@@ -57,6 +59,7 @@ public:
     TaskHash CalcUniqueTaskHash(const Task& cb);
     TaskHash CalcNormalTaskHash(const Task& cb);
     bool IsLongTask(const HttpTaskInfo& task) const;
+
 private:
     Botlog* _logger = Botlog::GetInstance();
 	std::map<uuid, HttpTaskInfo> _TaskMapping;

@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-//#include <windows.h>
 #include <UIAutomation.h>
 #include <iostream>
 #include <interface/IQQMessageExporter.h>

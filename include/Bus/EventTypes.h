@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <interface/IQMsgFormatter.h>
+#include <QMessage.h>
 struct WindowLostEvent 
 {
     std::string componentName;
@@ -18,4 +18,9 @@ struct HttpCallbackInfo
 {
     std::string HttpBody;
     QMessage callInfo;
+};
+
+struct FetchMessageEvent
+{
+	QMessage msg;
 };

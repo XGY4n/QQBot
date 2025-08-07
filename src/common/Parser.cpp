@@ -63,24 +63,6 @@ Parser::Parser(//DI
             _logger->LOG_WRITE_ERR("Parser: Symbol is empty.");
         }
     }
-    try {
-        _fetcher->SetMessageCallback([this](const QMessage msg) {
-            try {
-                this->OnFetcherMessage(msg);
-            }
-            catch (const std::exception& e) {
-                if (_logger) {
-                    _logger->LOG_ERROR_SELF("Exception in OnFetcherMessage: %s", e.what());
-                }
-            }
-            });
-    }
-    catch (const std::exception& e) {
-        if (_logger) {
-            _logger->LOG_ERROR_SELF("Failed to set fetcher callback: %s", e.what());
-        }
-        throw;
-    }
     if (_logger) {
         _logger->LOG_SUCCESS_SELF("Parser constructed successfully (DI).");
     }
@@ -134,33 +116,6 @@ Parser::Parser(
     if (_logger) {
         _logger->LOG_SUCCESS_SELF("Parser constructed successfully (DI).");
     }
-
-    try {
-        _fetcher->SetMessageCallback([this](const QMessage msg) {
-            try {
-                this->OnFetcherMessage(msg); 
-            }
-            catch (const std::exception& e) {
-                if (_logger) {
-                    _logger->LOG_ERROR_SELF("Exception in OnFetcherMessage: %s", e.what());
-                }
-            }
-            });
-    }
-    catch (const std::exception& e) {
-        if (_logger) {
-            _logger->LOG_ERROR_SELF("Failed to set fetcher callback: %s", e.what());
-        }
-        throw;
-    }
-}
-
-void Parser::OnFetcherMessage(const QMessage msg) {
-    if (_msgCallback) _msgCallback(msg);
-}
-
-void Parser::SetMessageCallback(MessageCallback cb) {
-    _msgCallback = std::move(cb);
 }
 
 Parser::~Parser()

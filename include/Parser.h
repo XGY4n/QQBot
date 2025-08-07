@@ -36,7 +36,6 @@ class Parser
 	private:
 		bool SetParserMarkSymbol(std::string Symbols);
 		bool SetParserMarkSymbol(char Symbol);
-		void OnFetcherMessage(const QMessage msg);
 
 	public:
 	private:
@@ -45,6 +44,4 @@ class Parser
 		std::unique_ptr<IUIAWindowController> _windowController;
 		std::unique_ptr<IMessageFetcher> _fetcher;
 		std::string _markSymbol;
-		MessageCallback _msgCallback;
-
 };

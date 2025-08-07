@@ -18,11 +18,6 @@ public:
 
     bool SetParserMarkSymbol(std::string Symbols);
 
-    void SetMessageCallback(MessageCallback cb) override {
-        _callback = std::move(cb);
-    }
-
-    void OnNewMessage(const QMessage msg);
 
 private:
     bool MessageFetcher::isValidMessage(const QMessage& msg);
@@ -46,7 +41,6 @@ private:
     std::atomic<bool> _fetcherRunning{ false };   
 
     //else
-    MessageCallback _callback;
     HWND _automationWindowHandle; 
     std::string _symbol;
 };

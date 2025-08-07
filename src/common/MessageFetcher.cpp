@@ -63,12 +63,6 @@ void MessageFetcher::stop()
         _logger->LOG_SUCCESS_SELF("MessageFetcher stop");
     }
 }
- 
-void MessageFetcher::OnNewMessage(const QMessage msg) {
-    if (_callback) {
-        _callback(msg); 
-    }
-}
 
 void MessageFetcher::handleHeartbeat(const std::string& current, const std::string& previous, int& timer) 
 {
@@ -108,7 +102,7 @@ void MessageFetcher::processMessage(QMessage& msg)
     if (isValidMessage(msg))
     {
         msg.message = std::move(msg.message.substr(1));
-        OnNewMessage(msg);
+        EventBusInstance::instance().publish(FetchMessageEvent{ msg });
         _logger->Record(Botlog::Type_Message, Botlog::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, msg.toString());
         return;
     }

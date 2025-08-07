@@ -165,8 +165,6 @@ TaskBuilder::PyReflexCallInfo TaskBuilder::analysisPyReflexCallInfo()
     TaskBuilder::PyReflexCallInfo analysis;
     for (const auto& keyValue : _currheadMapping.parameters)
     {
-        std::cout << keyValue.first << std::endl;
-
         switch (keyMap[keyValue.first])
         {
         case Py_Call_Head:
