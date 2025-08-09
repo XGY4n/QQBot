@@ -104,7 +104,9 @@ Parser::Parser(
     }
 
     try {
-        //_windowController->MoveWindowOffScreen();
+#ifndef _DEBUG
+        _windowController->MoveWindowOffScreen();
+#endif    
     }
     catch (const std::exception& e) {
         if (_logger) {

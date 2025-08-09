@@ -24,7 +24,6 @@ public :
 		QMessage callInfo;
 		Task taskcallback;
 	}ServiceCallbackInfo;
-	//typedef ServiceCallbackInfo PSCBI;
 public:
     virtual ~ITaskRunner() = default;
     virtual std::optional<ServiceCallbackInfo> run(Task task) = 0;

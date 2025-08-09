@@ -225,75 +225,66 @@ public:
     template<typename CharT>
     Botlog::Logstat Record(Botlog::Type type, Botlog::Level lev, Botlog::Owner own, std::basic_string<CharT>& msg)
     {
-        std::lock_guard<std::mutex> lock(log_mutex);  // RAII
         std::string infopath = this->logpath + Days() + ".log";
         alignas(16) std::basic_ostream<CharT>& out = getOutputStream<CharT>();
-        alignas(16) std::basic_ofstream<CharT> file2(infopath, std::ios::app);
-        alignas(16)std::ofstream file(infopath, std::ios::app);
-
-        std::ostringstream oss;
-        oss << sys_section[type]
+        std::ostringstream oss_console;
+        oss_console << sys_section[type]
             << lev_section[lev]
             << own_section[own]
             << Now_time()
             << _MIDCUT;
-            std::cout << oss.str();
-            out << msg << std::endl;
-
-        if (file.is_open())
         {
-            file << sys_section[type + 2]
-            << lev_section[lev + 3]
-            << own_section[own + 3]
-            << Now_time()
-            << _MIDCUT << std::flush;
-            file2 << msg << std::endl;
-            file2.close();
+            std::lock_guard<std::mutex> lock(log_mutex);
+            alignas(16) std::basic_ofstream<CharT> msg_loginfo(infopath, std::ios::app);
+            alignas(16)std::ofstream raw_loginfo(infopath, std::ios::app);
+            std::cout << oss_console.str();
+            out << msg << std::endl;
+            if (!raw_loginfo.is_open())
+            {
+                return LOG_WRITE_ERR;
+            }
+            raw_loginfo << _SYSTEM
+                << lev_section[lev + 3]
+                << own_section[own + 3]
+                << Now_time()
+                << _MIDCUT << std::flush;
+            msg_loginfo << msg << std::endl;
             return LOG_WRITE_SUCCESS;
         }
-        else
-        {
-            return LOG_WRITE_ERR;
-        }
-        file2.close();
-        file.close();
+
         return LOG_WRITE_ERR;
     }
 
     template<typename CharT>
     Botlog::Logstat Record(Botlog::Level lev, Botlog::Owner own, std::basic_string<CharT>& msg)
     {
-        std::lock_guard<std::mutex> lock(log_mutex);
         std::string infopath = this->logpath + Days() + ".log";
         alignas(16) std::basic_ostream<CharT>& out = getOutputStream<CharT>();
-        alignas(16) std::basic_ofstream<CharT> file2(infopath, std::ios::app);
-        alignas(16)std::ofstream file(infopath, std::ios::app);
-        std::ostringstream oss;
-        oss<< _SYSTEMC
+        std::ostringstream oss_console;
+        oss_console<< _SYSTEMC
             << lev_section[lev]
             << own_section[own]
             << Now_time()
             << _MIDCUT;
-        std::cout << oss.str();
-        out << msg << std::endl;
-
-        if (file.is_open())
         {
-            file << _SYSTEM
+            std::lock_guard<std::mutex> lock(log_mutex);
+            alignas(16) std::basic_ofstream<CharT> msg_loginfo(infopath, std::ios::app);
+            alignas(16)std::ofstream raw_loginfo(infopath, std::ios::app);
+            std::cout << oss_console.str();
+            out << msg << std::endl;
+            if (!raw_loginfo.is_open())
+            {
+                return LOG_WRITE_ERR;
+            }
+            raw_loginfo << _SYSTEM
                 << lev_section[lev + 3]
                 << own_section[own + 3]
                 << Now_time()
                 << _MIDCUT << std::flush;
-                file2 << msg << std::endl;
-                file2.close();
+            msg_loginfo << msg << std::endl;
             return LOG_WRITE_SUCCESS;
         }
-        else
-        {
-            return LOG_WRITE_ERR;
-        }
-        file2.close();
-        file.close();
+
         return LOG_WRITE_ERR;
     }
 
