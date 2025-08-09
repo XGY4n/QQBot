@@ -36,6 +36,7 @@ class ServiceManager
         PythonTaskRunner::ServiceCallbackInfo callback; 
         QMessage callInfo;
         TaskHash hash = 0;
+        std::unique_ptr<httplib::Client> healthclient;
     };
 
 public:

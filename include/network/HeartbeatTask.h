@@ -7,7 +7,7 @@ public:
     ~HeartbeatTask();
     void start();
     void stop();    
-    void sendHeartbeat(std::string uuid, int heartbeatPort);
+    void sendHeartbeat(httplib::Client& healthclient);
 private:
     std::unique_ptr<HttpClientAdapter> _adapter;
     std::string target_url;

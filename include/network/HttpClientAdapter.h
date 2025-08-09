@@ -12,7 +12,7 @@ class HttpClientAdapter {
 public:
     HttpClientAdapter();
 
-    void sendHeartbeatTask(int port);
+    void sendHeartbeatTask(httplib::Client& healthclient);
 
     void HttpClientAdapter::BoardCastMessage(QMessage msg);
 

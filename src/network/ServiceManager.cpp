@@ -72,6 +72,7 @@ ServiceManager::HttpTaskInfo ServiceManager::CreateHttpTask(const PythonTaskRunn
     httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
     httpTask.callInfo = ServiceTask.callInfo;
     httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
+	httpTask.healthclient = std::make_unique<httplib::Client>("127.0.0.1", httpTask.heartbeatPort);
     return httpTask;
 }
 
@@ -169,7 +170,7 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
         }
     }
 
-    _TaskMapping.insert({ ServiceTask.task_uuid, httpTask });
+    _TaskMapping.insert({ ServiceTask.task_uuid, std::move(httpTask)});
     _logger->LOG_SUCCESS_SELF("Inserted task: task_uuid : " + ServiceTask.task_uuid + " Function JSON : " + ServiceTask.taskcallback.Jsonstring);
 }
 
@@ -341,7 +342,7 @@ void ServiceManager::MonitorTasks()
                 }
                 else 
                 {
-                    _heartbeatTask->sendHeartbeat(it->second.task_uuid, it->second.heartbeatPort);
+                    _heartbeatTask->sendHeartbeat(*it->second.healthclient);
                 }
                 ++it;
             }

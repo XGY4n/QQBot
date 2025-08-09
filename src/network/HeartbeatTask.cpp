@@ -20,7 +20,7 @@ void HeartbeatTask::start()
 
 
 }
-void HeartbeatTask::sendHeartbeat(std::string uuid, int heartbeatPort)
+void HeartbeatTask::sendHeartbeat(httplib::Client& healthclient)
 {
-	_adapter->sendHeartbeatTask(heartbeatPort);
+	_adapter->sendHeartbeatTask(healthclient);
 }
