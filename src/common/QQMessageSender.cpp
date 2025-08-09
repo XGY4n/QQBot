@@ -117,7 +117,7 @@ bool QQMessageSender::ParseJsonInfo(const std::string& jsonStr,
         status = j["status"];
         timestamp = j["timestamp"];
         return_type = j["return_type"];
-        values = j["result"].get<std::string>();
+		values = UTF8ToGBk(j["result"].get<std::string>().c_str());
         _logger->LOG_SUCCESS_SELF(values);
         return true;
     } 
