@@ -7,10 +7,10 @@ PythonTaskRunner::PythonTaskRunner()
 	ReadPythonEnvConfig();
 	Py_Initialize();
 	if (!Py_IsInitialized()) {
-		_logger->LOG_ERROR_SELF("Python Interpreter initialization failed£¡");
+		LOG_ERROR_SELF("Python Interpreter initialization failed£¡");
 		throw std::runtime_error("Python interpreter initialization failed.");
 	}
-	_logger->LOG_SUCCESS_SELF("Python Interpreter initialization successful£¡");
+	LOG_SUCCESS_SELF("Python Interpreter initialization successful£¡");
 }
 
 PythonTaskRunner::~PythonTaskRunner()
@@ -74,15 +74,15 @@ std::optional<PythonTaskRunner::ServiceCallbackInfo> PythonTaskRunner::run(Task 
     }
     catch (const std::exception& e) 
     {
-		_logger->LOG_ERROR_SELF("Python task execution failed: " + std::string(e.what()));
+		LOG_ERROR_SELF("Python task execution failed: " + std::string(e.what()));
     }
 
     if (ans_string == nullptr)
     {
-        _logger->LOG_SUCCESS_SELF("Python task execution error ");
+        LOG_SUCCESS_SELF("Python task execution error ");
         return std::nullopt;
     }
-    _logger->LOG_SUCCESS_SELF("Python task execution done: " + std::string(ans_string));
+    LOG_SUCCESS_SELF("Python task execution done: " + std::string(ans_string));
 
     return BuildTCB(ans_string, task);
 }

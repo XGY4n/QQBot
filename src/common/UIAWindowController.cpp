@@ -2,13 +2,13 @@
 
 UIAWindowController::UIAWindowController(HWND hwnd) : _hwnd(hwnd) {
 	if (_hwnd == nullptr) {
-		_logger->LOG_ERROR_SELF("Invalid window handle provided to UIAWindowController");
+		LOG_ERROR_SELF("Invalid window handle provided to UIAWindowController");
 	}
 }
 
 UIAWindowController:: ~UIAWindowController() {
 	if (_hwnd != nullptr) {
-		_logger->LOG_SUCCESS_SELF("UIAWindowController destroyed successfully");
+		LOG_SUCCESS_SELF("UIAWindowController destroyed successfully");
 	}
 }
 

@@ -30,7 +30,6 @@ private:
     void watchConfigHotReload(const std::string& dir, const std::string& filename);
 
 private:
-    Botlog* _logger = Botlog::GetInstance();
     std::string _groupName;
     HWND _mainGroup;
 	HWND _msgCenter;

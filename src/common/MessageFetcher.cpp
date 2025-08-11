@@ -6,7 +6,7 @@ MessageFetcher::MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* 
     _automationWindowHandle = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
 
     if (_msgExporter == NULL || !_automationWindowHandle || !_formatter) {
-        _logger->LOG_ERROR_SELF("MessageFetcher init error");
+        LOG_ERROR_SELF("MessageFetcher init error");
     }
 
 }
@@ -24,7 +24,7 @@ MessageFetcher::MessageFetcher(std::unique_ptr<IQMsgFormatter> formatter, std::u
     _automationWindowHandle = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
 
     if (!_msgExporter || !_automationWindowHandle || !_formatter) {
-        _logger->LOG_ERROR_SELF("MessageFetcher init error");
+        LOG_ERROR_SELF("MessageFetcher init error");
     }
 
 }
@@ -40,7 +40,7 @@ void MessageFetcher::start()
     _fetcherRunning = true;
     __refThread = std::thread(&MessageFetcher::Refresh, this);
     __fetcherThread = std::thread(&MessageFetcher::fetchLoop, this);
-    _logger->LOG_SUCCESS_SELF("MessageFetcher start...");
+    LOG_SUCCESS_SELF("MessageFetcher start...");
 
 }
 
@@ -60,7 +60,7 @@ void MessageFetcher::stop()
         _formatter.reset();
         _windowController.reset();
         _msgExporter.reset();
-        _logger->LOG_SUCCESS_SELF("MessageFetcher stop");
+        LOG_SUCCESS_SELF("MessageFetcher stop");
     }
 }
 
@@ -72,7 +72,7 @@ void MessageFetcher::handleHeartbeat(const std::string& current, const std::stri
         timer = 300;
 
     if (timer == 800)
-        _logger->filelog(Botlog::LEVEL_SUCCESS, Botlog::OWNER_SELF, "Heart Beat");
+        Botlog::GetInstance()->filelog(Botlog::LEVEL_SUCCESS, Botlog::OWNER_SELF, "Heart Beat");
     else if (timer > 800)
         timer = 800;
     std::this_thread::sleep_for(std::chrono::milliseconds(timer));
@@ -87,7 +87,7 @@ bool MessageFetcher::tryParse(std::string& raw, QMessage& QQMessage)
     }
     catch (const std::exception& e) 
     {
-        _logger->Record(Botlog::LEVEL_WARNIGN, Botlog::OWNER_SELF, e.what());
+        Botlog::GetInstance()->Record(Botlog::LEVEL_WARNIGN, Botlog::OWNER_SELF, e.what());
         return false;
     }
 }
@@ -103,10 +103,10 @@ void MessageFetcher::processMessage(QMessage& msg)
     {
         msg.message = std::move(msg.message.substr(1));
         EventBusInstance::instance().publish(FetchMessageEvent{ msg });
-        _logger->Record(Botlog::Type_Message, Botlog::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, msg.toString());
+        Botlog::GetInstance()->Record(Botlog::Type_Message, Botlog::LEVEL_SUCCESS, Botlog::OWNER_USERCALL, msg.toString());
         return;
     }
-    _logger->Record(Botlog::Type_Message, Botlog::LEVEL_SUCCESS, Botlog::OWNER_SELF, msg.toString());
+    Botlog::GetInstance()->Record(Botlog::Type_Message, Botlog::LEVEL_SUCCESS, Botlog::OWNER_SELF, msg.toString());
 }
 
 void MessageFetcher::fetchLoop()
@@ -121,7 +121,7 @@ void MessageFetcher::fetchLoop()
         }
         if (!tryParse(raw, QQMessage))
         {
-			_logger->LOG_WARNING_SELF("Failed to parse message: " + raw + "Fallback parse used");
+			LOG_WARNING_SELF("Failed to parse message: " + raw + "Fallback parse used");
 			continue;
         }
         processMessage(QQMessage);

@@ -39,7 +39,6 @@ class Parser
 
 	public:
 	private:
-		Botlog* _logger = Botlog::GetInstance();
 		std::unique_ptr<IQMsgFormatter> _formatter;
 		std::unique_ptr<IUIAWindowController> _windowController;
 		std::unique_ptr<IMessageFetcher> _fetcher;

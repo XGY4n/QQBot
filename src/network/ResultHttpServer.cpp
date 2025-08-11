@@ -15,15 +15,15 @@ void ResultHttpServer::setupRoutes()
 {
     // 添加 POST /report 路由
     _adapter->addRoute_POST("/report", [this](const httplib::Request& req, httplib::Response& res) {
-        _logger->LOG_SUCCESS_SELF("Received POST /report request.");
-        _logger->LOG_SUCCESS_SELF("POST body: " + req.body);
+        LOG_SUCCESS_SELF("Received POST /report request.");
+        LOG_SUCCESS_SELF("POST body: " + req.body);
         if (onReportPostCallback_) {
             onReportPostCallback_(req.body);  // 把数据传回 ServiceManager
         }
         res.set_content("POST /report OK", "text/plain");
     });
     _adapter->addRoute_POST("/health", [this](const httplib::Request& req, httplib::Response& res) {
-        //_logger->LOG_SUCCESS_SELF("Received POST /health request.");
+        //LOG_SUCCESS_SELF("Received POST /health request.");
         EventBusInstance::instance().publish(HeartbeatHttpCb{ req.body });
 
         res.set_content("POST /health OK", "text/plain");
@@ -46,6 +46,6 @@ void ResultHttpServer::start()
 
 void ResultHttpServer::stop()
 {
-    _logger->LOG_SUCCESS_SELF("Stopping ResultHttpServer...");
+    LOG_SUCCESS_SELF("Stopping ResultHttpServer...");
     _adapter->stop();
 }

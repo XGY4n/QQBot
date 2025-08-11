@@ -49,7 +49,7 @@ std::optional<T> Executor<T>::GetNextTask() {
 template<typename T>
 void Executor<T>::ProcessSingleTask(std::optional<T> original_task_data) {
     if (!original_task_data) {
-        _logger->LOG_ERROR_SELF("Received an empty optional task from queue.");
+        LOG_ERROR_SELF("Received an empty optional task from queue.");
         return;
     }
 
@@ -62,7 +62,7 @@ void Executor<T>::ProcessSingleTask(std::optional<T> original_task_data) {
     }
 
     if (builtTask.status == 1) {
-        _logger->LOG_SUCCESS_SELF("Task built successfully and is valid. Submitting Task with ID: " + std::to_string(builtTask.messageId));
+        LOG_SUCCESS_SELF("Task built successfully and is valid. Submitting Task with ID: " + std::to_string(builtTask.messageId));
         SubmitTask(builtTask);
     }
     else {
@@ -73,7 +73,7 @@ void Executor<T>::ProcessSingleTask(std::optional<T> original_task_data) {
         if (builtTask.status != 1) {
             error_msg += " (Status: " + std::to_string(builtTask.status) + ")";
         }
-        _logger->LOG_ERROR_SELF(error_msg);
+        LOG_ERROR_SELF(error_msg);
     }
 }
 
@@ -95,7 +95,7 @@ void Executor<T>::SubmitTask(Task task)
     std::optional<ITaskRunner::ServiceCallbackInfo> taskinfo_opt = _pyTaskrunner->run(task);
     if (!taskinfo_opt) //if (!taskinfo_opt.has_value())
     {
-        _logger->LOG_ERROR_SELF("Failed to run task: " + std::to_string(task.messageId));
+        LOG_ERROR_SELF("Failed to run task: " + std::to_string(task.messageId));
         return;
     }
     _serviceManager->RegisterTask(taskinfo_opt.value());

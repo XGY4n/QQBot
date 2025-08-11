@@ -52,7 +52,7 @@ void TaskBuilder::watchTaskConfigHotReload(const std::string& dir, const std::st
 
     if (hDir == INVALID_HANDLE_VALUE)
     {
-        _logger->LOG_ERROR_SELF("Failed to open directory handle for config watch.");
+        LOG_ERROR_SELF("Failed to open directory handle for config watch.");
         return;
     }
 
@@ -75,7 +75,7 @@ void TaskBuilder::watchTaskConfigHotReload(const std::string& dir, const std::st
             std::wstring changedFile(notify->FileName, notify->FileNameLength / sizeof(WCHAR));
             if (changedFile == wfile)
             {
-                _logger->LOG_SUCCESS_SELF(std::filesystem::absolute(dir).string() + 
+                LOG_SUCCESS_SELF(std::filesystem::absolute(dir).string() + 
                     "\\PythonTask.ini HotReload");
                 ReadPyTaskConfig();
                 EventBusInstance::instance().publish(TaskConfigReloadEvent{});
@@ -97,7 +97,7 @@ void TaskBuilder::ReadPyTaskConfig()
     {
         if (iniSection.parameters.size() < 5)
         {
-			_logger->LOG_WARNING_SELF(" Section: [" + iniSection.section +
+			LOG_WARNING_SELF(" Section: [" + iniSection.section +
                 "] expects 5 parameters, but got " +
                 std::to_string(iniSection.parameters.size()) + ".");
             continue;
@@ -115,7 +115,7 @@ void TaskBuilder::ReadPyTaskConfig()
 
                 _autoStartTasks.insert(AutoHead->second + AutoArg->second);
             }
-            _logger->LOG_SUCCESS_SELF(keyValue.first + "=>" + keyValue.second);
+            LOG_SUCCESS_SELF(keyValue.first + "=>" + keyValue.second);
         }
     }
 }
@@ -212,7 +212,7 @@ bool TaskBuilder::GetcurrMapping(const std::string& callHead)
 	}
 	else 
     {
-		_logger->LOG_ERROR_SELF("Call head not found: " + callHead);
+		LOG_ERROR_SELF("Call head not found: " + callHead);
 		return false;
 	}
 }
@@ -225,21 +225,21 @@ Task TaskBuilder::build(const QMessage rawMessage)
     std::string errMsg;
 
     if (!checkInputFormat(inputMsg, errMsg)) {
-        _logger->LOG_WARNING_SELF("formatMessage failed with: " + errMsg);
+        LOG_WARNING_SELF("formatMessage failed with: " + errMsg);
         task.status = false;
         return task;
     }
     std::pair<std::string, std::string> parsedResult;
     if (!formatMessage(parsedResult, inputMsg)) 
     {
-        _logger->LOG_ERROR_SELF("Failed to parse message."
+        LOG_ERROR_SELF("Failed to parse message."
             "   Tuple Result:"
             "   First : [" + parsedResult.first + "]"
             "   Second: [" + parsedResult.second + "]");
         task.status = false;
         return task;
     }
-    _logger->LOG_SUCCESS_SELF("Success to parse message."
+    LOG_SUCCESS_SELF("Success to parse message."
         "  Tuple Result:"
         "  First : [" + parsedResult.first + "]"
         "  Second: [" + parsedResult.second + "]");
@@ -249,7 +249,7 @@ Task TaskBuilder::build(const QMessage rawMessage)
 	task.commandToRun = expr;
     if (!GetcurrMapping(header))
     {
-		_logger->LOG_ERROR_SELF("GetcurrMapping failed for header: " + header);
+		LOG_ERROR_SELF("GetcurrMapping failed for header: " + header);
         task.status = false;
 		return task;
     }
@@ -272,7 +272,7 @@ Task TaskBuilder::build(const QMessage rawMessage)
     if (ec)
     {
         task.status = false;
-        _logger->LOG_ERROR_SELF("Failed to get absolute path from script path: " + task.pythonScriptPath + ", error: " + ec.message());
+        LOG_ERROR_SELF("Failed to get absolute path from script path: " + task.pythonScriptPath + ", error: " + ec.message());
         return task;
     }
     nlohmann::json j;

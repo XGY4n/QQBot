@@ -118,12 +118,12 @@ bool QQMessageSender::ParseJsonInfo(const std::string& jsonStr,
         timestamp = j["timestamp"];
         return_type = j["return_type"];
         values = UTF8ToGBk(j["result"].get<std::string>().c_str());
-        _logger->LOG_SUCCESS_SELF(values);
+        LOG_SUCCESS_SELF(values);
         return true;
     } 
     catch (const std::exception& e) {
         std::string err = "Exception: " + std::string(e.what()) + " HttpCallback : " + jsonStr;
-        _logger->LOG_SUCCESS_SELF(err);
+        LOG_SUCCESS_SELF(err);
         return false;
     }
 }
@@ -238,12 +238,12 @@ void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage ca
 //        timestamp = j["timestamp"];
 //        return_type = j["return_type"];
 //        values = j["result"].get<std::string>();
-//        _logger->LOG_SUCCESS_SELF(values);
+//        LOG_SUCCESS_SELF(values);
 //
 //    } 
 //    catch (const std::exception& e) {
 //        std::string err = "Exception: " + std::string(e.what()) + " HttpCallback : " + JsonInfo;
-//        _logger->LOG_SUCCESS_SELF(err);
+//        LOG_SUCCESS_SELF(err);
 //        sendMessage(err);
 //        return;
 //    }
@@ -318,8 +318,8 @@ void QQMessageSender::SetGroupName(const std::string& groupName) {
 // 私有方法实现
 HWND QQMessageSender::FindTargetWindow(const std::string& targetName) {
     HWND hwnd = FindWindow(_T("TXGuiFoundation"), multi_Byte_To_Wide_Char(targetName));
-    if (!hwnd && _logger) {
-        _logger->LOG_ERROR_SELF("Window not found: " + targetName);
+    if (!hwnd) {
+        LOG_ERROR_SELF("Window not found: " + targetName);
     }
     return hwnd;
 }
@@ -340,7 +340,7 @@ void QQMessageSender::SendStringToWindow(const std::string& message) {
 
 void QQMessageSender::SendFileToWindow( const std::string& filePath) {
     if (!FileExists(filePath)) {
-        if (_logger) _logger->LOG_ERROR_SELF("File not found: " + filePath);
+        LOG_ERROR_SELF("File not found: " + filePath);
         SendStringToWindow("File not found: " + filePath);
         return;
     }
@@ -350,10 +350,10 @@ void QQMessageSender::SendFileToWindow( const std::string& filePath) {
         Sleep(100);
         SendMessageA(_group, WM_KEYDOWN, VK_RETURN, 0);
         Sleep(100);
-        if (_logger) _logger->LOG_SUCCESS_SELF("File sent: " + filePath);
+        LOG_SUCCESS_SELF("File sent: " + filePath);
     }
-    else if (_logger) {
-        _logger->LOG_ERROR_SELF("Failed to copy file to clipboard: " + filePath);
+    else {
+        LOG_ERROR_SELF("Failed to copy file to clipboard: " + filePath);
     }
 }
 
@@ -411,7 +411,7 @@ bool QQMessageSender::AddRichEditFormatToClipboard(const std::string& targetPath
     if (FileExists(targetPath)) {// && file.substr(file.length() - 4) == ".gif")
         std::string qqRichEditData = "<QQRichEditFormat><Info version=\"1001\"></Info><EditElement type=\"1\" imagebiztype=\"0\" filepath=\"" + targetPath + "\" shortcut=\"\"></EditElement></QQRichEditFormat>";
         std::vector<char> data(qqRichEditData.begin(), qqRichEditData.end());
-        _logger->LOG_SUCCESS_SELF(qqRichEditData);
+        LOG_SUCCESS_SELF(qqRichEditData);
         //std::cout << data << std::endl;
         // Put data into clipboard
         if (OpenClipboard(0)) {
@@ -453,7 +453,7 @@ std::string QQMessageSender::GenerateTempFile(const std::string& filePath) {
         return tempFilePath;
     }
 
-    if (_logger) _logger->LOG_ERROR_SELF("Failed to create temp file: " + tempFilePath);
+    LOG_ERROR_SELF("Failed to create temp file: " + tempFilePath);
     return "";
 }
 
@@ -468,7 +468,7 @@ bool QQMessageSender::EnsureFolderExists(const std::string& folderPath) {
         return true;
     }
 
-    if (_logger) _logger->LOG_ERROR_SELF("Failed to create directory: " + folderPath);
+    LOG_ERROR_SELF("Failed to create directory: " + folderPath);
     return false;
 }
 

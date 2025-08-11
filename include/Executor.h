@@ -20,12 +20,12 @@ public:
 		_serviceManager = std::make_unique<ServiceManager>(); 
         _sender = std::make_unique<QQMessageSender>(_targetGroup);
 		if (!_serviceManager) {
-			_logger->LOG_ERROR_SELF("Failed to create ServiceManager instance.");
+			LOG_ERROR_SELF("Failed to create ServiceManager instance.");
 			return;
 		}        
         EventBusInstance::instance().subscribe<HttpCallbackInfo>(
             [this](const HttpCallbackInfo& event) {
-                _logger->LOG_SUCCESS_SELF("send to QQ :" + event.HttpBody);
+                LOG_SUCCESS_SELF("send to QQ :" + event.HttpBody);
                 _sender->sendMessageAsJson(event.HttpBody, event.callInfo);//sendMessageAsJson
             });
         EventBusInstance::instance().subscribe<TaskConfigReloadEvent>(
@@ -102,7 +102,6 @@ private:
     bool BuildTask(std::optional<T> task, Task& taskout);
     std::optional<T> GetNextTask();
     void ProcessSingleTask(std::optional<T> original_task_data);
-    Botlog* _logger = Botlog::GetInstance();
 
     mutable std::mutex _mutex;
     std::queue<T> _queue;

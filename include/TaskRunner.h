@@ -17,7 +17,6 @@ public:
 private : 
 	ITaskRunner::ServiceCallbackInfo BuildTCB(const char* TaskCallBackJsonstr, Task task);
 private :
-	Botlog* _logger = Botlog::GetInstance();
 	std::wstring _pythonHomeW;
 	std::string _pythonHomeA;
 

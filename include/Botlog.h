@@ -34,10 +34,10 @@
 
 #ifdef _CLASS_LOG_
 #define LOG(level, owner, message) \
-        Botlog::Record(level, owner, \
+        Botlog::GetInstance()->Botlog::Record(level, owner, \
         std::string("[") + __FUNCTION__ + "]" + message)
 #else
-#define LOG(level, owner, message) Botlog::Record(level, owner, message)
+#define LOG(level, owner, message)  Botlog::GetInstance()->Botlog::Record(level, owner, message)
 #endif
 #define LOG_WARNING_SELF(message) LOG(Botlog::Level::LEVEL_WARNIGN, Botlog::OWNER_SELF, message)
 #define LOG_WARNING_USERCALL(message) LOG(Botlog::Level::LEVEL_WARNIGN, Botlog::OWNER_USERCALL, message)
@@ -146,7 +146,7 @@ class Botlog
 public:
     Botlog(const std::string& logpath = "./log/");
     ~Botlog();
-    static  Botlog* GetInstance() {
+    static Botlog* GetInstance() {
         static Botlog instance;
         return &instance;
     }

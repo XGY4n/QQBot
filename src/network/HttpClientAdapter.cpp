@@ -6,19 +6,19 @@ void HttpClientAdapter::sendHeartbeatTask(httplib::Client& healthclient)
     {
         auto response = healthclient.Get("/health");
         if (!response) {
-            _logger->LOG_WARNING_SELF("GET /health failed: response is null. Port: " +
+            LOG_WARNING_SELF("GET /health failed: response is null. Port: " +
                 std::to_string(healthclient.port()
             ));
         }
         else if (response->status != 200) 
         {
-            _logger->LOG_WARNING_SELF("GET 127.0.0.1:"+ 
+            LOG_WARNING_SELF("GET 127.0.0.1:"+ 
                 std::to_string(healthclient.port()) + "/health");
         } 
     }
     catch (const std::exception& e)
     {
-        _logger->LOG_ERROR_SELF(std::string("Exception: ") + e.what());
+        LOG_ERROR_SELF(std::string("Exception: ") + e.what());
     }
 
 }
@@ -26,7 +26,7 @@ void HttpClientAdapter::sendHeartbeatTask(httplib::Client& healthclient)
 void HttpClientAdapter::BoardCastMessage(QMessage msg)
 {
     if (!_boardCastclient) {
-        _logger->LOG_ERROR_SELF("HTTP client nullptr");
+        LOG_ERROR_SELF("HTTP client nullptr");
         return;
     }
 
@@ -41,11 +41,11 @@ void HttpClientAdapter::BoardCastMessage(QMessage msg)
 
     if (res && res->status == 200) 
     {
-        _logger->LOG_SUCCESS_SELF("broadcast success" + msg.toString());
+        LOG_SUCCESS_SELF("broadcast success" + msg.toString());
     }
     else 
     {
-        _logger->LOG_ERROR_SELF("broadcast error" );
+        LOG_ERROR_SELF("broadcast error" );
     }
 }
 

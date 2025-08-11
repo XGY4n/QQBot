@@ -62,7 +62,6 @@ private:
     bool IsLongTask(const HttpTaskInfo& task) const;
 
 private:
-    Botlog* _logger = Botlog::GetInstance();
 	std::map<uuid, HttpTaskInfo> _TaskMapping;
     std::map<TaskHash, Task> _longTaskMapping;
     std::map<TaskHash, Task> _uniqueTaskMapping;

@@ -15,7 +15,5 @@ public:
     void stop();
 
 private:
-    Botlog* _logger = Botlog::GetInstance();
-
     std::unique_ptr<httplib::Server> server_;
 };

@@ -91,7 +91,6 @@ private:
     bool GetcurrMapping( const std::string& callHead);
 public:
 private:
-    Botlog* _logger = Botlog::GetInstance();
     std::unique_ptr<WinInIWrapper> _PyCfg;
     std::set<WinInIWrapper::InIMapping<std::string>> _result;
 	WinInIWrapper::InIMapping<std::string> _currheadMapping;

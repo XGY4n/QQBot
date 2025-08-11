@@ -76,7 +76,6 @@ private:
     void SendImageOrFallback(const std::string& path);
 private:
     const std::string _kSupportedImageTypes = ".jpg, .jpeg, .png, .bmp, .gif";
-    Botlog* _logger = Botlog::GetInstance();
     HWND _group;
     std::string m_groupName;
     std::mutex m_mutex;

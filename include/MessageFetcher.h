@@ -32,9 +32,6 @@ private:
     std::unique_ptr<IQMsgFormatter> _formatter;
     std::unique_ptr<IUIAWindowController> _windowController;
 
-    //log
-    Botlog* _logger = Botlog::GetInstance();
-
     //thread
     std::thread __fetcherThread;
     std::thread __refThread;

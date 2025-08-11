@@ -5,12 +5,12 @@
 //    _qmsgwind = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
 //    if (_qmsgwind == 0) {
 //        if (_logger) {
-//            _logger->LOG_ERROR_SELF("Failed to find message window. Aborting Parser construction.");
+//            LOG_ERROR_SELF("Failed to find message window. Aborting Parser construction.");
 //        }
 //        throw std::runtime_error("Parser: Message window not found.");
 //    }
 //    if (_logger) {
-//        _logger->LOG_SUCCESS_SELF("Message window handle: " + std::to_string(reinterpret_cast<uintptr_t>(_qmsgwind)));
+//        LOG_SUCCESS_SELF("Message window handle: " + std::to_string(reinterpret_cast<uintptr_t>(_qmsgwind)));
 //    }
 //
 //    _markSymbol = "#";
@@ -23,13 +23,13 @@
 //    }
 //    catch (const std::bad_alloc& e) {
 //        if (_logger) {
-//            _logger->LOG_ERROR_SELF("Failed to allocate memory for a component: " + std::string(e.what()));
+//            LOG_ERROR_SELF("Failed to allocate memory for a component: " + std::string(e.what()));
 //        }
 //        throw std::runtime_error("Parser: Memory allocation failed during component initialization.");
 //    }
 //    catch (const std::exception& e) {
 //        if (_logger) {
-//            _logger->LOG_ERROR_SELF("Error during component initialization: " + std::string(e.what()));
+//            LOG_ERROR_SELF("Error during component initialization: " + std::string(e.what()));
 //        }
 //        throw;
 //    }
@@ -39,13 +39,13 @@
 //    }
 //    else {
 //        if (_logger) {
-//            _logger->LOG_ERROR_SELF("UIAWindowController was unexpectedly null after initialization.");
+//            LOG_ERROR_SELF("UIAWindowController was unexpectedly null after initialization.");
 //        }
 //        throw std::runtime_error("Parser: UIAWindowController uninitialized.");
 //    }
 //
 //    if (_logger) {
-//        _logger->LOG_SUCCESS_SELF("Parser constructed successfully.");
+//        LOG_SUCCESS_SELF("Parser constructed successfully.");
 //    }
 //}
 Parser::Parser(//DI
@@ -59,13 +59,11 @@ Parser::Parser(//DI
 
     // 检查 Symbol 是否为空
     if (_markSymbol.empty()) {
-        if (_logger) {
-            _logger->LOG_WRITE_ERR("Parser: Symbol is empty.");
-        }
+        LOG_ERROR_SELF("Parser: Symbol is empty.");
+        return;
     }
-    if (_logger) {
-        _logger->LOG_SUCCESS_SELF("Parser constructed successfully (DI).");
-    }
+    LOG_SUCCESS_SELF("Parser constructed successfully (DI).");
+
 }
 
 
@@ -86,9 +84,7 @@ Parser::Parser(
     }
 
     if (!_windowController) {
-        if (_logger) {
-            _logger->LOG_ERROR_SELF("UIAWindowController is null after DI initialization.");
-        }
+        LOG_ERROR_SELF("UIAWindowController is null after DI initialization.");
         throw std::invalid_argument("Parser: IUIAWindowController is null.");
     }
 
@@ -98,9 +94,8 @@ Parser::Parser(
 
     // 检查 Symbol 是否为空
     if (_markSymbol.empty()) {
-        if (_logger) {
-            _logger->LOG_WRITE_ERR("Parser: Symbol is empty.");
-        }
+        LOG_ERROR_SELF("Parser: Symbol is empty.");
+		throw std::invalid_argument("Parser: Symbol is empty.");
     }
 
     try {
@@ -109,15 +104,12 @@ Parser::Parser(
 #endif    
     }
     catch (const std::exception& e) {
-        if (_logger) {
-            _logger->LOG_ERROR_SELF("Exception in MoveWindowOffScreen: %s", e.what());
-        }
+        LOG_ERROR_SELF("Exception in MoveWindowOffScreen: %s", e.what());
         throw; 
     }
 
-    if (_logger) {
-        _logger->LOG_SUCCESS_SELF("Parser constructed successfully (DI).");
-    }
+    LOG_SUCCESS_SELF("Parser constructed successfully (DI).");
+
 }
 
 Parser::~Parser()
@@ -140,35 +132,23 @@ void Parser::start()
 
     if (!_fetcher)
     {
-        if (_logger)
-        {
-            _logger->LOG_ERROR_SELF("Parser::start() called with uninitialized _fetcher. Aborting start operation.");
-        }
+        LOG_ERROR_SELF("Parser::start() called with uninitialized _fetcher. Aborting start operation.");
         throw std::runtime_error("Parser::start(): MessageFetcher is not initialized.");
     }
 
     try 
     {
         _fetcher->start();
-        if (_logger)
-        {
-            _logger->LOG_SUCCESS_SELF("Message fetching started successfully.");
-        }
+        LOG_SUCCESS_SELF("Message fetching started successfully.");
     }
     catch (const std::exception& e)
     {
-        if (_logger)
-        {
-            _logger->LOG_ERROR_SELF("Error starting message fetcher: " + std::string(e.what()));
-        }
+        LOG_ERROR_SELF("Error starting message fetcher: " + std::string(e.what()));
         throw; 
     }
     catch (...) 
     {
-        if (_logger)
-        {
-            _logger->LOG_ERROR_SELF("An unknown error occurred while starting message fetcher.");
-        }
+        LOG_ERROR_SELF("An unknown error occurred while starting message fetcher.");
         throw;
     }
 }
@@ -176,6 +156,6 @@ void Parser::start()
 void Parser::stop()
 {
     _fetcher->stop();
-    _logger->LOG_SUCCESS_SELF("fetcher stop done");
+    LOG_SUCCESS_SELF("fetcher stop done");
 }
 

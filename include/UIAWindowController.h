@@ -12,8 +12,5 @@ public:
     HWND GetWindow() const;
 private:    
     bool SimulateClick(int x, int y);
-
-    Botlog* _logger = Botlog::GetInstance();
-
     HWND _hwnd;
 };
