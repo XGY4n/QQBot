@@ -85,11 +85,10 @@ std::string UIAQQMessageExporter::ConvertBSTRToString(BSTR bstr)
         return "";
     }
 
-    WideCharToMultiByte(CP_ACP, 0, bstr, bstrLength, buffer, stringLength, NULL, NULL);
-    buffer[stringLength] = '\0';
-    std::string str(buffer);
-    delete[] buffer;
-    return str;
+    int sizeNeeded = WideCharToMultiByte(CP_ACP, 0, bstr, bstrLength, nullptr, 0, nullptr, nullptr);
+    std::string result(sizeNeeded, '\0');
+    WideCharToMultiByte(CP_ACP, 0, bstr, bstrLength, result.data(), sizeNeeded, nullptr, nullptr);
+    return result;
 }
 
 HRESULT UIAQQMessageExporter::ProcessUIAElement(IUIAutomationElement* pItemElement, std::vector<std::string>& ItemsList)
@@ -147,12 +146,16 @@ std::vector<std::string> UIAQQMessageExporter::GetQQMessages()
     {
         lastStr = ItemsList[ItemsList.size() - 1];
     }
-    std::lock_guard<std::mutex> lock(_windowMutex);
 
-    for (const auto& str : ItemsList) 
-    {     
-        _window.push_back(str);
-    }		
+    {
+        std::lock_guard<std::mutex> lock(_windowMutex);
+
+        for (const auto& str : ItemsList) 
+        {     
+            _window.push_back(str);
+        }		
+    }
+
     cv.notify_one();
 
     return ItemsList;
