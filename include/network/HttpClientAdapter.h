@@ -18,7 +18,5 @@ public:
 
 private:
     Botlog* _logger = Botlog::GetInstance();
-    std::unique_ptr<httplib::Client> _healthclient;
     std::unique_ptr<httplib::Client> _boardCastclient;
-
 };
