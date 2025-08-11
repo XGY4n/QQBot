@@ -75,8 +75,10 @@ void TaskBuilder::watchTaskConfigHotReload(const std::string& dir, const std::st
             std::wstring changedFile(notify->FileName, notify->FileNameLength / sizeof(WCHAR));
             if (changedFile == wfile)
             {
-                _logger->LOG_SUCCESS_SELF("PythonTask.ini HotReload");
+                _logger->LOG_SUCCESS_SELF(std::filesystem::absolute(dir).string() + 
+                    "\\PythonTask.ini HotReload");
                 ReadPyTaskConfig();
+                EventBusInstance::instance().publish(TaskConfigReloadEvent{});
             }
         }
 

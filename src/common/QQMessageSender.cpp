@@ -117,7 +117,7 @@ bool QQMessageSender::ParseJsonInfo(const std::string& jsonStr,
         status = j["status"];
         timestamp = j["timestamp"];
         return_type = j["return_type"];
-		values = UTF8ToGBk(j["result"].get<std::string>().c_str());
+        values = UTF8ToGBk(j["result"].get<std::string>().c_str());
         _logger->LOG_SUCCESS_SELF(values);
         return true;
     } 
@@ -174,7 +174,6 @@ void QQMessageSender::handleAtMessage(bool isAtback, const std::string& callInfo
 void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo)
 {
     std::string task_uuid, status, timestamp, return_type, values;
-
     if (!ParseJsonInfo(JsonInfo, task_uuid, status, timestamp, return_type, values))
     {
         sendMessage("JSON parse failed or invalid structure: " + JsonInfo);
@@ -183,7 +182,14 @@ void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage ca
 
     if (status == "failed")
     {
-        sendMessage("Task failed:\n" + JsonInfo);
+        try {
+            auto j = nlohmann::json::parse(JsonInfo);
+            sendMessage("Task failed: " + 
+                UTF8ToGBk( j.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace).c_str()));
+        }
+        catch (...) {
+            sendMessage("Task failed: " + JsonInfo);
+        }
         return;
     }
 

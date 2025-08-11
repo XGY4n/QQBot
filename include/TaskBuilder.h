@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <converSTR.h>
 #include <set>
+#include <Bus/EventBusInstance.h>
 struct Task 
 {
     QMessage callInfo;

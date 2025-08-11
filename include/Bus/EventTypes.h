@@ -24,3 +24,7 @@ struct FetchMessageEvent
 {
 	QMessage msg;
 };
+
+struct TaskConfigReloadEvent
+{
+};

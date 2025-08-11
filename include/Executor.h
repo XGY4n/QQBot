@@ -26,8 +26,11 @@ public:
         EventBusInstance::instance().subscribe<HttpCallbackInfo>(
             [this](const HttpCallbackInfo& event) {
                 _logger->LOG_SUCCESS_SELF("send to QQ :" + event.HttpBody);
-               
                 _sender->sendMessageAsJson(event.HttpBody, event.callInfo);//sendMessageAsJson
+            });
+        EventBusInstance::instance().subscribe<TaskConfigReloadEvent>(
+            [this](const TaskConfigReloadEvent& event) {
+                SetupAutoStart();
             });
 		_serviceManager->start(); // Start the service manager to handle tasks
         SetupAutoStart();
