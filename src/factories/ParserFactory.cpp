@@ -15,7 +15,7 @@ std::unique_ptr<Parser> ParserFactory::Create(HWND qmsgWnd, std::string Symbol)
     {
         fetcher->SetParserMarkSymbol(Symbol);
         return std::make_unique<Parser>(
-            std::move(fetcher)
+            std::move(fetcher), Symbol
         );
     }
     fetcher->SetParserMarkSymbol("#");

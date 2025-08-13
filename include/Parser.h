@@ -13,7 +13,7 @@
 class Parser 
 {
 	public:
-		Parser();
+
 		Parser(//DI
 			std::unique_ptr<IQMsgFormatter> formatter,
 			std::unique_ptr<IUIAWindowController> windowController,
@@ -26,13 +26,10 @@ class Parser
 		);
 		~Parser();
 
-		using MessageCallback = std::function<void(const QMessage)>;
-
 		std::string GetmarkSymbol() const { return _markSymbol; }
 		void start();
 		void stop();
-		using MessageCallback = std::function<void(const QMessage)>;
-		void SetMessageCallback(MessageCallback cb);
+
 	private:
 		bool SetParserMarkSymbol(std::string Symbols);
 		bool SetParserMarkSymbol(char Symbol);
