@@ -14,7 +14,7 @@ QQMessageSender::QQMessageSender(HWND Group)
     isAtback = _botConfig->FindValueA<bool>("@", "isAtback");
 }
 
-void QQMessageSender::sendMessageAt(std::string QQnumber)
+void QQMessageSender::sendMessageAt(const std::string QQnumber)
 {
     SetForegroundWindow(_group);
     std::string s = "@" + QQnumber;

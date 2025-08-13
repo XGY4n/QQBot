@@ -11,35 +11,34 @@
 #include <nlohmann/json.hpp>
 #include <TaskBuilder.h>
 #include <set>
-
+#include <interface/IQQMessageSender.h>
 namespace fs = std::filesystem;
 
-class QQMessageSender {
+class QQMessageSender :public IQQMessageSender {
 public:
     QQMessageSender(HWND Group);
 
-    void setGroubHandle(HWND Group)
+    void setGroupHandle(HWND Group) 
     {
         _group = Group;
-
     }
     // 文本消息发送
-    void SendTextToGroup(const std::string& message);
-    void SendTextToUser(const std::string& message, const std::string& userName);
+    void SendTextToGroup(const std::string& message) override;
+    void SendTextToUser(const std::string& message, const std::string& userName) override;
 
     // 文件发送
-    void SendFileToGroup(const std::string& filePath);
-    void SendFileToUser(const std::string& filePath, const std::string& userName);
+    void SendFileToGroup(const std::string& filePath) override;
+    void SendFileToUser(const std::string& filePath, const std::string& userName) override;
 
     // 图片发送
-    void SendImageToGroup(const std::string& imagePath);
+    void SendImageToGroup(const std::string& imagePath) override;
 
     // 通用发送方法（自动判断类型）
-    void sendMessage(const std::string& content);
-    void sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo);
+    void sendMessage(const std::string& content) override;
+    void sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo) override;
     // 设置群聊名称
-    void SetGroupName(const std::string& groupName);
-    void sendMessageAt(std::string QQnumber);
+    void SetGroupName(const std::string& groupName) override;
+    void sendMessageAt(const std::string QQnumber)override;
 
     //void sendMessageAt(const std::string& content, std::string QQnumber);
 private:

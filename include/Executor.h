@@ -92,7 +92,7 @@ public:
     void SetHWDN(HWND target)
     {
         _targetGroup = target;
-        _sender->setGroubHandle(_targetGroup);
+        _sender = move(std::make_unique<QQMessageSender>(_targetGroup));
     }
 
 private:
@@ -107,7 +107,7 @@ private:
     std::queue<T> _queue;
     std::condition_variable _cv;
     HWND _targetGroup;
-    std::unique_ptr<QQMessageSender> _sender = std::make_unique<QQMessageSender>(_targetGroup);
+    std::unique_ptr<IQQMessageSender> _sender = std::make_unique<QQMessageSender>(_targetGroup);
     std::thread _worker;      
     std::atomic<bool> _running{ false }; 
     std::unique_ptr<TaskBuilder> _pyTaskBuilder;
