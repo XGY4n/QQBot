@@ -10,6 +10,9 @@ import report_bridge as cppHttp_bridge
 import Botlog as logger
 import re
 from dataclasses import dataclass
+import debugpy
+import os
+import sys
 
 @dataclass
 class ParsedMessage:
@@ -65,7 +68,7 @@ class BotSDK:
         self.running = True
         self.bridge = cppHttp_bridge.ReportBridge("http://127.0.0.1:11451/report")
         self.message_queue = Queue()
-
+        self.DebugStatus = False;
         self.start_broadcast_listener()  # 启动监听线程
 
     def print(self, string):
@@ -106,7 +109,32 @@ class BotSDK:
             return self.message_queue.get()
         except:
             return None
+    def StartDebug(self):
+        if self.DebugStatus:
+            print("Debug server is already active.")
+            return
 
+        self.DebugStatus = True
+
+        if not getattr(sys, "_dbgpy_started", False):
+            DEBUG_PORT = int(os.environ.get("PY_DEBUG_PORT", "58260"))
+            
+            try:
+                debugpy.listen(("0.0.0.0", DEBUG_PORT))
+                self.print(f"[DEBUG] Debug server listening on port {DEBUG_PORT}")
+                sys._dbgpy_started = True
+            except Exception as e:
+                self.print(f"Error starting debug server: {e}")
+                self.DebugStatus = False 
+                return
+
+        self.print("[DEBUG] Waiting for VSCode debugger to attach...")
+        try:
+            debugpy.wait_for_client()
+            self.print("[DEBUG] Debugger attached!")
+        except Exception as e:
+            self.print(f"[DEBUG] Failed to attach debugger: {e}")
+            self.DebugStatus = False 
 
 # === 测试 ===
 if __name__ == "__main__":

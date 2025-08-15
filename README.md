@@ -10,7 +10,13 @@
 
 请确保你已经在系统中安装并正确配置了 **Python 3.9**。(更高的版本未测试)
 如未安装，可从 [Python 官网](https://www.python.org/downloads/release/python-390/) 下载并安装对应版本。
+#### 1.1安装依赖
 
+在您的项目根目录中，使用 `requirements.txt` 文件安装所有依赖库。
+
+```bash
+pip install -r requirements.txt
+```
 ---
 ### 2. 编译项目
 - 编译
@@ -138,7 +144,6 @@ def test(data):
             bot.print(f"消息：{msg.content}")#'test'
             bot.postMessage("Get once")#回发QQ默认字符串
             bot.postMessage("some/path", "AUTO")#支持多类型见PythonTask.ini 返回类型说明
-        time.sleep(0.1)
     return "long task end"
 ```
  对应的PythonTask.ini节配置:
@@ -154,7 +159,64 @@ def test(data):
 ```bash
      #test.test
 ```
-### 8.长任务 短任务 唯一性机制详解
+### 8.脚本DEBUG
+QQbot SDK 内置了对 VS Code 的调试支持，可以轻松地在脚本中进行断点调试。
+#### 8.1 配置 VS Code
+需要使用 `attach` 模式来连接正在运行的脚本。在项目根目录的Python文件夹中创建Python的Debug配置文件。在 `.vscode` 文件夹中，创建或修改 `launch.json` 文件，添加一个 `attach` 配置。
+
+**`.vscode/launch.json`**
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Attach to bot",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 58260  //固定配置
+            },
+            "justMyCode": false
+        }
+    ]
+}
+
+```
+#### 8.2 修改脚本
+ ```Python
+import QQbot
+import time
+def test(data):
+    bot = QQbot.BotSDK()
+    bot.print(data)#{'Values': 'test'}
+
+    bot.StartDebug() #增加这行将会阻塞 此时连接vscode的debug
+
+    bot.print(data['Values'])#'test'
+    while True:
+        msg = bot.get_latest_message()#阻塞 接收后续所有#开头的QQ消息
+        if msg:
+            bot.print(f"主线程处理接收到的消息：{msg}")
+            bot.print(f"消息发送者名称：{msg.username}")
+            bot.print(f"消息发送者QQ号：{msg.email}")
+            bot.print(f"时间：{msg.time}")
+            bot.print(f"消息：{msg.content}")#'test'
+            bot.postMessage("Get once")#回发QQ默认字符串
+            bot.postMessage("some/path", "AUTO")#支持多类型见PythonTask.ini 返回类型说明
+    return "long task end"
+```
+#### 8.3 启动调试
+
+1. **启动脚本**：从QQ启动 Python 脚本。
+2. **等待连接**：脚本会运行到 `bot.StartDebug()` 这一行并暂停，等待连接。
+3. **连接调试器**：打开 VS Code，切换到 **运行和调试** 视图（快捷键 `Ctrl+Shift+D`）。
+4. **选择配置**：在顶部的下拉菜单中选择 **"Python: Attach to bot"**。
+5. **开始调试**：点击绿色的 **启动调试** 按钮。
+
+一旦连接成功，您就可以设置断点、检查变量和进行单步调试了。
+
+### 9.长任务 短任务 唯一性机制详解
 
 在机器人系统中，任务的配置决定了其行为模式，主要涉及**任务类型（长/短任务）**和**唯一性**两个核心概念。理解这些配置项能帮助你更好地控制任务的生命周期和执行逻辑。
 
