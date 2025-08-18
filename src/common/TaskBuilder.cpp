@@ -92,7 +92,7 @@ void TaskBuilder::ReadPyTaskConfig()
 {
     auto temoVec = this->_PyCfg->ReadAllA();
     _result = std::set<WinInIWrapper::InIMapping<std::string>>(temoVec.begin(), temoVec.end());
-
+    _autoStartTasks.clear();
     for (const auto& iniSection : _result)
     {
         if (iniSection.parameters.size() < 5)
