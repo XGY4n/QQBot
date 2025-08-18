@@ -5,10 +5,13 @@ project(QQBot VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(PYTHON_DIR "${CMAKE_SOURCE_DIR}/Python")
-set(DLL_DIR "${CMAKE_SOURCE_DIR}/dll")
-set(PYTHON_INCLUDE_DIR "D:/workspace/Python/Python39/include" CACHE PATH "Python include path")
+# Python 配置由外部输入
+set(PYTHON_INCLUDE "" CACHE PATH "Path to Python include directory")
+set(PYTHON_LIBDIR "" CACHE PATH "Path to Python lib directory")
+set(PYTHON_LIBNAME "" CACHE STRING "Python library name (e.g. python39, python310)")
+set(PYTHON_DLL "" CACHE PATH "Path to Python dll directory")
 
+set(PYTHON_DIR "${CMAKE_SOURCE_DIR}/Python")
 set(INI_DIR "${CMAKE_SOURCE_DIR}/ini")
 
 cmake_host_system_information(RESULT CPU_NUMBER_OF_LOGICAL_CORES QUERY NUMBER_OF_LOGICAL_CORES)
@@ -16,10 +19,10 @@ message(STATUS "Number of logical CPU cores: ${CPU_NUMBER_OF_LOGICAL_CORES}")
 
 include_directories(
     "${CMAKE_SOURCE_DIR}/include"
-    "${PYTHON_INCLUDE_DIR}"
+    "${PYTHON_INCLUDE}"
 )
 
-link_directories("${CMAKE_SOURCE_DIR}/libs")
+link_directories("${PYTHON_LIBDIR}")
 
 add_definitions(-D_WINSOCKAPI_)
 add_definitions(-D_CLASS_LOG_)
@@ -33,7 +36,7 @@ source_group(TREE "${CMAKE_SOURCE_DIR}/include" PREFIX "Header Files" FILES ${HE
 target_compile_definitions(QQBot PRIVATE UNICODE _UNICODE)
 
 target_link_libraries(QQBot
-    "python39_d.lib"
+    ${PYTHON_LIBNAME}
 )
 
 if(CPU_NUMBER_OF_LOGICAL_CORES)
@@ -46,9 +49,7 @@ target_compile_options(QQBot PRIVATE
 
 add_custom_command(TARGET QQBot POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${DLL_DIR}/python3.dll" "$<TARGET_FILE_DIR:QQBot>"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${DLL_DIR}/python39.dll" "$<TARGET_FILE_DIR:QQBot>"
+        "${PYTHON_DLL}" "$<TARGET_FILE_DIR:QQBot>"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${PYTHON_DIR}" "$<TARGET_FILE_DIR:QQBot>/Python"
 	COMMAND ${CMAKE_COMMAND} -E copy_directory

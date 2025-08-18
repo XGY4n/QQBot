@@ -93,7 +93,7 @@ template<typename T>
 void Executor<T>::SubmitTask(Task task)
 {
     std::optional<ITaskRunner::ServiceCallbackInfo> taskinfo_opt = _pyTaskrunner->run(task);
-    if (!taskinfo_opt) //if (!taskinfo_opt.has_value())
+    if (!taskinfo_opt || !taskinfo_opt.value().status) //if (!taskinfo_opt.has_value())
     {
         LOG_ERROR_SELF("Failed to run task: " + std::to_string(task.messageId));
         return;

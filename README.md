@@ -6,9 +6,9 @@
 
 ## 快速开始指南
 
-### 1. 准备 Python 3.9 环境
+### 1. 准备 Python 环境
 
-请确保你已经在系统中安装并正确配置了 **Python 3.9**。(更高的版本未测试)
+请确保你已经在系统中安装并正确配置了 **Python 3.9**/**Python 3.10**/**Python 3.12**。(3.11未测试)
 如未安装，可从 [Python 官网](https://www.python.org/downloads/release/python-390/) 下载并安装对应版本。
 #### 1.1安装依赖
 
@@ -25,7 +25,7 @@ pip install -r requirements.txt
 ```bash
 mkdir build
 cd build
-cmake -DPYTHON_INCLUDE_DIR="your/python/39/include/path" .. -G "Visual Studio 17 2022" -A x64
+cmake .. -G "Visual Studio 17 2022" -A x64 -DPYTHON_INCLUDE="D:/workspace/Python/Python39/include" -DPYTHON_LIBDIR="D:/workspace/Python/Python39/libs" -DPYTHON_LIBNAME="python39" -DPYTHON_DLL="D:/workspace/Python/Python39/python39.dll"
 ```
 ### 3. 配置 INI 文件
 推荐编译后将ini模板文件移动到build/ 和 .exe的输出目录下再编辑
@@ -37,9 +37,6 @@ cmake -DPYTHON_INCLUDE_DIR="your/python/39/include/path" .. -G "Visual Studio 17
     ```ini
     [PYTHONHOME]
     HOME = D:\Python\Python39
-
-    [PYTHONLIB]
-    LIB = D:\Python\Python39\libs
     ```
 * **BotSetting.ini**
   设置机器人要连接的 QQ 群名称和响应标识符。
