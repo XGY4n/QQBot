@@ -16,7 +16,8 @@ std::map<std::string, TaskBuilder::KeyValue> TaskBuilder::keyMap = {
     {"Py_Call_Func", TaskBuilder::Py_Call_Fun},
     {"Py_Return_type", TaskBuilder::Py_Return_type},
     {"Py_Task_Type" , TaskBuilder::Py_Task_Type},
-    {"isUnique", TaskBuilder::IsUnique}
+    {"isUnique", TaskBuilder::IsUnique},
+    {"DEBUG", TaskBuilder::DEBUG}
 };
 
 TaskBuilder::TaskBuilder()
@@ -196,6 +197,12 @@ TaskBuilder::PyReflexCallInfo TaskBuilder::analysisPyReflexCallInfo()
                 analysis.isUnique = true;
             }
             break;
+        case DEBUG:
+			if (keyValue.second == "true")
+			{
+				analysis.Debug = true;
+			}
+			break;
         }
     }
     analysis.taskName = _currheadMapping.section;
@@ -266,6 +273,7 @@ Task TaskBuilder::build(const QMessage rawMessage)
     task.head = reflexinfo.callHead;
     task.commandToRun = rawMessage.message;
     task.isUnique = reflexinfo.isUnique;
+    task.Debug = reflexinfo.Debug;
     auto test = expr.c_str();
     std::error_code ec;
     std::filesystem::path abs_path = std::filesystem::absolute(task.pythonScriptPath, ec);
@@ -282,6 +290,7 @@ Task TaskBuilder::build(const QMessage rawMessage)
     j["Module"] = task.fileName;
 	j["Function"] = task.functionName;
     j["ReturnType"] = reflexinfo.returnType;
+    j["Debug"] = reflexinfo.Debug;
     task.Jsonstring = j.dump();
     return task;
 }

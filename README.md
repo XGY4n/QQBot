@@ -9,7 +9,7 @@
 ### 1. 准备 Python 环境
 
 请确保你已经在系统中安装并正确配置了 **Python 3.9**/**Python 3.10**/**Python 3.12**。(3.11未测试)
-如未安装，可从 [Python 官网](https://www.python.org/downloads/release/python-390/) 下载并安装对应版本。
+如未安装，可从 [Python 官网](https://www.python.org/downloads/release) 下载并安装对应版本。
 #### 1.1安装依赖
 
 在您的项目根目录中，使用 `requirements.txt` 文件安装所有依赖库。
@@ -33,10 +33,10 @@ cmake .. -G "Visual Studio 17 2022" -A x64 -DPYTHON_INCLUDE="D:/workspace/Python
 项目使用多个 INI 配置文件，请按如下说明进行设置：
 
 * **PythonEnv.ini**  
-  配置 Python 3.9 的路径及相关设置。当前不会检查系统环境，请手动指定。
+  配置 Python 的路径及相关设置。当前不会检查系统环境，请手动指定。
     ```ini
     [PYTHONHOME]
-    HOME = D:\Python\Python39
+    HOME = D:\Python\Python3xx
     ```
 * **BotSetting.ini**
   设置机器人要连接的 QQ 群名称和响应标识符。
@@ -65,6 +65,7 @@ cmake .. -G "Visual Studio 17 2022" -A x64 -DPYTHON_INCLUDE="D:/workspace/Python
     AUTO_Start = xxx         # 可选 随机器人自动启动时传参 不填写则不会自动启动
     isUnique = true          # 可选 false/true是否唯一 默认不填写为false 
     Py_Task_Type = short     # 可选 long/short 是否为短任务 默认不填写为长任务 短任务会在5s内把python脚本强制终止
+    DEBUG = true             # 可选 不配置使用PythonDebug的时候会导致Python提前自杀
     ```
 
     **说明：**
@@ -158,6 +159,10 @@ def test(data):
 ```
 ### 8.脚本DEBUG
 QQbot SDK 内置了对 VS Code 的调试支持，可以轻松地在脚本中进行断点调试。
+#### 8.0 Task配置文件修改
+```ini
+DEBUG = true #不配置使用PythonDebug的时候会导致Python提前自杀
+```
 #### 8.1 配置 VS Code
 需要使用 `attach` 模式来连接正在运行的脚本。在项目根目录的Python文件夹中创建Python的Debug配置文件。在 `.vscode` 文件夹中，创建或修改 `launch.json` 文件，添加一个 `attach` 配置。
 
@@ -178,7 +183,6 @@ QQbot SDK 内置了对 VS Code 的调试支持，可以轻松地在脚本中进�
         }
     ]
 }
-
 ```
 #### 8.2 修改脚本
  ```Python

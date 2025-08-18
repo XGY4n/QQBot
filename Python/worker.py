@@ -55,6 +55,9 @@ def start_health_server(port, task_uuid):
     HTTPServer(("127.0.0.1", port), HealthHandler).serve_forever() 
 
 def main():
+    
+    global TIMEOUT_SECONDS
+
     write_log("into ""worker.py main()")
 
     args_json = sys.argv[1]
@@ -66,7 +69,11 @@ def main():
     function_to_call = args.get("function_name", "run")
     return_type = args.get("return_type", "str")
     report_url_for_sdk = args.get("report_url", {})
-    
+    Debug = args.get("Debug", {})
+    if Debug == True:
+        TIMEOUT_SECONDS = 300
+        write_log(f"DEBUG been setting TimeOut set 5 min")
+
     # --- 新增：获取 task_uuid ---
     task_uuid = args.get("task_uuid") 
     write_log(f"获取到的 task_uuid: {task_uuid}")

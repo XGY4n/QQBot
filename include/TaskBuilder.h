@@ -17,6 +17,7 @@ struct Task
     bool status = false;
     short TaskType = 0;
     bool isUnique;
+    bool Debug = false;
     std::string TaskName;
     std::string pythonScriptPath;
     std::string commandToRun;  
@@ -34,6 +35,7 @@ public:
 		short taskType = 0;
         bool autoStart = false;
         bool isUnique = false;
+        bool Debug = false;
         std::string taskName;
         std::string callHead;
         std::string callPath;
@@ -49,7 +51,8 @@ public:
         Py_Call_Fun,
         Py_Return_type,
         Py_Task_Type,
-        IsUnique
+        IsUnique,
+        DEBUG
     };
 
     enum PyReturnType {
