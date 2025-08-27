@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "HttpClientAdapter.h"
+#include "NetWorkClientAdapter.h"
 #include <QMessage.h>
 class BoardcastTask
 {
@@ -11,6 +11,6 @@ public:
 	void BoardcastMessage(QMessage msg);
 
 private:
-	std::unique_ptr<HttpClientAdapter> _adapter;
+	std::unique_ptr<NetWorkClientAdapter> _adapter;
 
 };

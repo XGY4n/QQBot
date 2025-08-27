@@ -100,7 +100,7 @@ PythonTaskRunner::ServiceCallbackInfo PythonTaskRunner::BuildTCB(const char* Tas
 {
     ServiceCallbackInfo info;
     nlohmann::json j = nlohmann::json::parse(TaskCallBackJsonstr);
-
+    
     info.pId = j["pid"].get<unsigned int>();
     info.heartbeat_port = j["heartbeat_port"].get<unsigned int>();
     info.reportUrl = j["report_port"].get<std::string>();
@@ -109,6 +109,5 @@ PythonTaskRunner::ServiceCallbackInfo PythonTaskRunner::BuildTCB(const char* Tas
     info.returnType = ReturnTypeMap[j["return_type"].get<std::string>()];
     info.callInfo = task.callInfo;
     info.taskcallback = task;
-
     return info;
 }

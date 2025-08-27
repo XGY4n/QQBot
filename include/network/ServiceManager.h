@@ -4,7 +4,7 @@
 //   HttpServerAdapter
 //       httplib::Server
 #include <network/HeartbeatTask.h>
-#include <network/ResultHttpServer.h>
+#include <network/NetWorkResultServer.h>
 #include <memory>
 #include <map>
 #include <string>
@@ -37,6 +37,7 @@ class ServiceManager
         QMessage callInfo;
         TaskHash hash = 0;
         std::unique_ptr<httplib::Client> healthclient;
+        SOCKET taskSocket;
     };
 
 public:
@@ -67,7 +68,7 @@ private:
     std::map<TaskHash, Task> _uniqueTaskMapping;
     std::unique_ptr<httplib::Server> server_ptr; 
     std::thread server_thread;
-    std::unique_ptr<ResultHttpServer> _resultServer;
+    std::unique_ptr<NetWorkResultServer> _resultServer;
     std::unique_ptr<HeartbeatTask> _heartbeatTask;
     std::unique_ptr<BoardcastTask> _boardcastTask;
 

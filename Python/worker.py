@@ -9,6 +9,7 @@ import datetime
 import Botlog as logger
 import requests
 import signal
+import socket
 
 TIMEOUT_SECONDS = 10
 heartbeat_timer = None
@@ -32,7 +33,7 @@ def reset_timer(task_uuid):
     heartbeat_timer = threading.Timer(TIMEOUT_SECONDS, kill_self, args=(task_uuid,))
     heartbeat_timer.start()
     
-def start_health_server(port, task_uuid):
+def start_health_server2(port, task_uuid):
     class HealthHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             try:
@@ -53,7 +54,43 @@ def start_health_server(port, task_uuid):
         
     reset_timer(task_uuid)
     HTTPServer(("127.0.0.1", port), HealthHandler).serve_forever() 
+    
+def start_health_server(port, task_uuid):
+    """
+    TCP 心跳服务，只接收心跳 JSON，并重置计时
+    """
+    def handle_client(client_sock, addr):
+        try:
+            while True:
+                data = client_sock.recv(4096)
+                if not data:
+                    break  # 对端关闭
+                try:
+                    payload = json.loads(data.decode('utf-8'))
+                except Exception:
+                    payload = {}
 
+                # 重置心跳计时
+                reset_timer(task_uuid)
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.connect(('127.0.0.1', 11452))
+                        s.sendall(json.dumps({"uuid": task_uuid}).encode('utf-8'))
+                except Exception as e:
+                    write_log("[Send to C++ Error]", e)
+        finally:
+            client_sock.close()
+
+    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_sock.bind(('127.0.0.1', port))
+    server_sock.listen()
+    write_log(f"[HealthServer] Listening on port {port}...")
+
+    #while True:
+    client_sock, addr = server_sock.accept()
+    threading.Thread(target=handle_client, args=(client_sock, addr), daemon=True).start()
+        
 def main():
     
     global TIMEOUT_SECONDS
@@ -89,6 +126,7 @@ def main():
         write_log("未提供 report_url，未初始化 QQBotSDK")
 
     threading.Thread(target=start_health_server, args=(port,task_uuid,), daemon=True).start()
+
     write_log(f"启动心跳服务线程，端口: {port}")
 
     script_dir = os.path.dirname(args.get("script_path", {}))
@@ -107,9 +145,6 @@ def main():
             task_result = target_function(task_args)
             write_log(f"用户模块 {function_to_call}() 返回结果: {task_result}")
 
-            # --- 关键修改：在 report_result 中包含 task_uuid ---
-            # 这里假设 report_bridge.report_result 可以接受一个字典或多个参数
-            # 包含 task_uuid 和 task_result
             report_data = {
                 "task_uuid": task_uuid,
                 "result": task_result,
@@ -118,7 +153,7 @@ def main():
                 "return_type" : return_type
             }
             bridge.report_result(report_data)
-            write_log(f"已调用 cppHttp_bridge.report_result 上报结果，包含 UUID: {task_uuid}")
+            write_log(f"已调用 cppHttp_bridge.report_result 上报结果 UUID: {task_uuid}")
             # -----------------------------------------------------
 
             write_log(f"用户脚本 ({module_name}.py) 中函数 {function_to_call}() 返回的结果是: {task_result}")

@@ -1,5 +1,5 @@
 #include <string>
-#include "HttpClientAdapter.h"
+#include "NetWorkClientAdapter.h"
 class HeartbeatTask 
 {
 public:
@@ -8,7 +8,8 @@ public:
     void start();
     void stop();    
     void sendHeartbeat(httplib::Client& healthclient);
+    void sendHeartbeatTCP(SOCKET& healthclient, int port);
 private:
-    std::unique_ptr<HttpClientAdapter> _adapter;
+    std::unique_ptr<NetWorkClientAdapter> _adapter;
     std::string target_url;
 };

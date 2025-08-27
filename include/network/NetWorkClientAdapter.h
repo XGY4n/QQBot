@@ -8,13 +8,16 @@
 #include <converSTR.h>
 #include <nlohmann/json.hpp>
 
-class HttpClientAdapter {
+class NetWorkClientAdapter {
 public:
-    HttpClientAdapter();
-
+    NetWorkClientAdapter();
     void sendHeartbeatTask(httplib::Client& healthclient);
 
-    void HttpClientAdapter::BoardCastMessage(QMessage msg);
+    void sendHeartbeatTask(SOCKET& healthclient, int port);
+
+    void BoardCastMessage(QMessage msg);
+
+	void Reconnect(SOCKET& healthclient, int port);
 
 private:
     std::unique_ptr<httplib::Client> _boardCastclient;

@@ -1,6 +1,6 @@
-#include "network/HttpServerAdapter.h"
+#include "network/NetWorkServerAdapter.h"
 
-void HttpServerAdapter::addRoute_GET(const std::string& path,
+void NetWorkServerAdapter::addRoute_GET(const std::string& path,
     std::function<void(const httplib::Request&, httplib::Response&)> handler)
 {
     if (!server_) {
@@ -10,7 +10,7 @@ void HttpServerAdapter::addRoute_GET(const std::string& path,
     server_->Get(path.c_str(), std::move(handler));
 }
 
-void HttpServerAdapter::addRoute_POST(const std::string& path,
+void NetWorkServerAdapter::addRoute_POST(const std::string& path,
     std::function<void(const httplib::Request&, httplib::Response&)> handler)
 {
     if (!server_) {
@@ -20,7 +20,17 @@ void HttpServerAdapter::addRoute_POST(const std::string& path,
     server_->Post(path.c_str(), std::move(handler));
 }
 
-void HttpServerAdapter::start(int port)
+void NetWorkServerAdapter::addRoute_TCP(std::function<void(const std::string&, TcpSocket&)> handler)
+{
+    if (!TcpServer_) {
+        TcpServer_ = std::make_unique<TcpServer>();
+    }
+    LOG_SUCCESS_SELF("Registering TCP route");
+
+    TcpServer_->setHandler(std::move(handler));
+}
+
+void NetWorkServerAdapter::startHttpServer(int port)
 {
     if (!server_) {
         server_ = std::make_unique<httplib::Server>();
@@ -35,10 +45,24 @@ void HttpServerAdapter::start(int port)
     }
 }
 
-void HttpServerAdapter::stop()
+void NetWorkServerAdapter::startTCPServer(int port)
+{
+    if (!TcpServer_)
+    {
+        TcpServer_ = std::make_unique<TcpServer>();
+    }   
+    TcpServer_->bindAndListen("127.0.0.1", port);
+    TcpServer_->start(); 
+}
+
+void NetWorkServerAdapter::stop()
 {
     if (server_) {
         LOG_SUCCESS_SELF("Stopping HTTP server...");
         server_->stop();
+    }
+    if (TcpServer_) {
+        LOG_SUCCESS_SELF("Stopping HTTP server...");
+        TcpServer_->close();
     }
 }

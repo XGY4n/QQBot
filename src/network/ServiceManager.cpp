@@ -11,7 +11,7 @@ ServiceManager::ServiceManager()
 
     try 
     {
-        _resultServer = std::make_unique<ResultHttpServer>();
+        _resultServer = std::make_unique<NetWorkResultServer>();
         LOG_SUCCESS_SELF("ResultHttpServer initialized.");
 
         _running = true;
@@ -44,7 +44,7 @@ ServiceManager::ServiceManager()
 
 ServiceManager::~ServiceManager()
 {
-
+    stop();
 }
 
 void ServiceManager::KillDuplicateTask(const HttpTaskInfo& task, TaskHash hash)
@@ -73,8 +73,13 @@ ServiceManager::HttpTaskInfo ServiceManager::CreateHttpTask(const PythonTaskRunn
     httpTask.callInfo = ServiceTask.callInfo;
     httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
 	httpTask.healthclient = std::make_unique<httplib::Client>("127.0.0.1", httpTask.heartbeatPort);
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(httpTask.heartbeatPort); // Python 端口
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // Python IP
+    connect(httpTask.taskSocket, (sockaddr*)&addr, sizeof(addr));
     return httpTask;
-}
+} 
 
 bool ServiceManager::RegisterLongTask(HttpTaskInfo& task)
 {
@@ -174,68 +179,6 @@ void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceT
     LOG_SUCCESS_SELF("Inserted task: task_uuid : " + ServiceTask.task_uuid + " Function JSON : " + ServiceTask.taskcallback.Jsonstring);
 }
 
-//void ServiceManager::RegisterTask(PythonTaskRunner::ServiceCallbackInfo ServiceTask)
-//{
-//    LOG_WARNING_SELF("RegisterTask called for task PID: " + std::to_string(ServiceTask.pId) + " and name: " + ServiceTask.task_uuid);
-//	HttpTaskInfo httpTask;
-//	httpTask.callback = ServiceTask;
-//	httpTask.pId = ServiceTask.pId;
-//	httpTask.task_uuid = ServiceTask.task_uuid;
-//	httpTask.status = ServiceTask.status;
-//	httpTask.reportUrl = ServiceTask.reportUrl;
-//    httpTask.returnType = ServiceTask.returnType;
-//    httpTask.heartbeatPort = ServiceTask.heartbeat_port;
-//    httpTask.lastHeartbeatTime = std::chrono::steady_clock::now();
-//    httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
-//    httpTask.callInfo = ServiceTask.callInfo;
-//	httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
-//    if (ServiceTask.taskcallback.isUnique && httpTask.taskType == Long)//唯一任务 : 整个机器人生命周期内同一时刻只存在一个的任务 与指令无关 与文件名称强相关
-//    {
-//        TaskHash hash_value = std::hash<std::string>{}
-//            (ServiceTask.taskcallback.pythonScriptPath +
-//            ServiceTask.taskcallback.fileName + 
-//            ServiceTask.taskcallback.TaskName);//唯一性校验为 节名称 + 文件路径 + 文件名称 设计上一个文件对应一个功能 不允许一个文件调用两个不同函数的情况出现
-//
-//        httpTask.hash = hash_value;
-//        auto result = _uniqueTaskMapping.insert({ hash_value, ServiceTask.taskcallback });
-//        if (!result.second) {
-//            KillProcess(ServiceTask.pId);
-//            LOG_ERROR_SELF(
-//                "Duplicate Unique long task detected! KILL\n"
-//                "  -> Hash: " + std::to_string(hash_value) + "\n"
-//                "  -> Function JSON: " + ServiceTask.taskcallback.Jsonstring + "\n"
-//                "  -> Process ID terminated: " + std::to_string(ServiceTask.pId)
-//            );
-//            return;
-//        }
-//    }
-//	else if(httpTask.taskType == Long)// 非唯一任务 : 允许同一时刻存在多个同名任务 但是对于长任务 xxx.yyy 需要同时校验xxx.yyy 如果xxx.yyy 存在 xxx.zzz还可以拉起来
-//    {
-//        TaskHash hash_value = std::hash<std::string>{}
-//            (ServiceTask.taskcallback.pythonScriptPath +
-//            ServiceTask.taskcallback.fileName +
-//            ServiceTask.taskcallback.TaskName+ ServiceTask.taskcallback.commandToRun);
-//        httpTask.hash = hash_value;
-//        auto result = _longTaskMapping.insert({ hash_value, ServiceTask.taskcallback });
-//        if (!result.second) {
-//            KillProcess(ServiceTask.pId);
-//            LOG_ERROR_SELF(
-//                "Duplicate long task detected! KILL\n"
-//                "  -> Hash: " + std::to_string(hash_value) + "\n"
-//                "  -> Function JSON: " + ServiceTask.taskcallback.Jsonstring + "\n"
-//                "  -> Process ID terminated: " + std::to_string(ServiceTask.pId)
-//            );
-//            return;
-//        }
-//    }
-//
-//    // 短任务直接执行
-//
-//    _TaskMapping.insert({ ServiceTask.task_uuid, httpTask });
-//    LOG_SUCCESS_SELF("Inserted task: task_uuid : " + ServiceTask.task_uuid
-//        + "Function JSON : " + ServiceTask.taskcallback.Jsonstring);
-//}
-
 bool GetProcessHANDLE(DWORD pid, HANDLE& pHANDLE)
 {
     // 需要 PROCESS_TERMINATE 权限才能终止进程
@@ -332,7 +275,7 @@ void ServiceManager::MonitorTasks()
                 auto duration = std::chrono::duration_cast<std::chrono::seconds>(
                     now - it->second.lastHeartbeatTime).count();
                 if (duration > 3) 
-                {  
+                {   
                     LOG_WARNING_SELF("Task " + it->second.task_uuid + 
                         " (pid=" + std::to_string(it->second.pId) + ") is unresponsive. Killing...");
 
@@ -342,7 +285,7 @@ void ServiceManager::MonitorTasks()
                 }
                 else 
                 {
-                    _heartbeatTask->sendHeartbeat(*it->second.healthclient);
+                    _heartbeatTask->sendHeartbeatTCP(it->second.taskSocket, it->second.heartbeatPort);
                 }
                 ++it;
             }

@@ -2,7 +2,7 @@
 
 BoardcastTask::BoardcastTask()
 {
-	_adapter = std::make_unique<HttpClientAdapter>();
+	_adapter = std::make_unique<NetWorkClientAdapter>();
 
 }
 BoardcastTask::~BoardcastTask()

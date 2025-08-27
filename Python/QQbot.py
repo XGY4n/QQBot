@@ -21,45 +21,6 @@ class ParsedMessage:
     email: str
     content: str
     
-class BroadcastHandler(BaseHTTPRequestHandler):
-    bot_instance = None  # 绑定 BotSDK 实例
-
-    def do_POST(self):
-        if self.path == "/broadcast":
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            try:
-                data = json.loads(post_data.decode('utf-8'))
-            except json.JSONDecodeError:
-                self.send_response(400)
-                self.end_headers()
-                return
-
-            if BroadcastHandler.bot_instance:
-                BroadcastHandler.bot_instance.print(f"[Broadcast Received] {data}")
-                msg = self.parse_message(data["message"])
-                BroadcastHandler.bot_instance.message_queue.put(msg)
-
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"OK")
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def log_message(self, format, *args):
-        # 防止打印 HTTP 请求日志
-        return
-        
-    def parse_message(self, raw_msg: str) -> ParsedMessage:
-        pattern = r'\[(.*?)\]\s+(.*?)\s+\((.*?)\)\s+(.*)'
-        match = re.match(pattern, raw_msg)
-        if not match:
-            return ParsedMessage(time="", username="", email="", content=raw_msg)
-
-        time, username, email, content = match.groups()
-        return ParsedMessage(time, username, email, content)
-
 class BotSDK:
     def __init__(self):
         self.musicPath = "./resource/music/"
@@ -68,7 +29,7 @@ class BotSDK:
         self.running = True
         self.bridge = cppHttp_bridge.ReportBridge("http://127.0.0.1:11451/report")
         self.message_queue = Queue()
-        self.DebugStatus = False;
+        self.DebugStatus = False
         self.start_broadcast_listener()  # 启动监听线程
 
     def print(self, string):
@@ -95,13 +56,25 @@ class BotSDK:
             "return_type": RTtype
         }
         self.bridge.report_result(report_data)
+        
     def start_broadcast_listener(self):
         def run_server():
-            BroadcastHandler.bot_instance = self
-            server = HTTPServer(("127.0.0.1", 19198), BroadcastHandler)
-            self.print("Listening for broadcast POSTs on http://127.0.0.1:19198/broadcast")
-            server.serve_forever()
+            
+            udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            udp_sock.bind(("", 19198))  # 监听 19198 端口
 
+            self.print("Listening for UDP broadcast on port 19198...")
+            while True:
+                data, addr = udp_sock.recvfrom(4096)  # 收 4KB
+                try:
+                    msg_json = json.loads(data.decode("utf-8"))
+                    self.print(f"[Broadcast Received from {addr}] {msg_json}")
+                    msg = self.parse_message(msg_json["message"])
+                    self.message_queue.put(msg)
+                except Exception as e:
+                    self.print(f"Error parsing message: {e}")
+                    
         threading.Thread(target=run_server, daemon=True).start()
 
     def get_latest_message(self):
@@ -135,7 +108,15 @@ class BotSDK:
         except Exception as e:
             self.print(f"[DEBUG] Failed to attach debugger: {e}")
             self.DebugStatus = False 
+            
+    def parse_message(self, raw_msg: str) -> ParsedMessage:
+        pattern = r'\[(.*?)\]\s+(.*?)\s+\((.*?)\)\s+(.*)'
+        match = re.match(pattern, raw_msg)
+        if not match:
+            return ParsedMessage(time="", username="", email="", content=raw_msg)
 
+        time, username, email, content = match.groups()
+        return ParsedMessage(time, username, email, content)
 # === 测试 ===
 if __name__ == "__main__":
     bot = BotSDK()

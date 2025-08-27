@@ -9,6 +9,7 @@ import Botlog as logger
 import os
 import importlib
 import warnings
+
 warnings.simplefilter("ignore", ResourceWarning)
 
 def write_log(message: str):
@@ -84,10 +85,10 @@ def main(jsmsg, py_home):
 
     # 端口设置
     #heartbeat_port = 10712  # 明确指定一个固定端口
-    heartbeat_port = find_available_port(8000, 9000)
+    heartbeat_port = find_available_port(8000, 10000)
+    
 
-
-    report_port = 11451  # 保持固定端口
+    report_port = 11451#find_available_port(8000, 10000)  # 保持固定端口
 
     # 构造报告URL
     base_report_url = input_task_args.get("report_url", "http://127.0.0.1/report")
@@ -115,6 +116,7 @@ def main(jsmsg, py_home):
         "task_args": input_task_args,
         "return_type": return_type,
         "Debug" : Debug,
+        #"socket" : sock_fd
     }
     
     write_log(f"整合后的参数: {json.dumps(combined_payload, indent=2)}")
@@ -136,7 +138,8 @@ def main(jsmsg, py_home):
         "report_port": report_url_for_worker,
         "task_uuid": task_uuid,
         "return_type": return_type,
-        "status" : 1
+        "status" : 1,
+        #"socket" : sock_fd
     }
     finallymsg = json.dumps(output_info)
     write_log(f"输出信息: {finallymsg}")

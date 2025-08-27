@@ -14,9 +14,9 @@ public:
 	PythonTaskRunner() ;
 	~PythonTaskRunner() override ;
 	std::optional<PythonTaskRunner::ServiceCallbackInfo> run(Task task) override;
-private : 
+private: 
 	ITaskRunner::ServiceCallbackInfo BuildTCB(const char* TaskCallBackJsonstr, Task task);
-private :
+private:
 	std::wstring _pythonHomeW;
 	std::string _pythonHomeA;
 
