@@ -6,19 +6,20 @@
 #include <Botlog.h>
 #include <QMessage.h>
 #include <converSTR.h>
-#include <nlohmann/json.hpp>
-
-class NetWorkClientAdapter {
+#include "udplib.h"
+class NetWorkClientAdapter 
+{
 public:
     NetWorkClientAdapter();
+
     void sendHeartbeatTask(httplib::Client& healthclient);
 
     void sendHeartbeatTask(SOCKET& healthclient, int port);
 
-    void BoardCastMessage(QMessage msg);
+    void BoardCastMessage(std::string serialized);
 
 	void Reconnect(SOCKET& healthclient, int port);
 
 private:
-    std::unique_ptr<httplib::Client> _boardCastclient;
+    std::unique_ptr<UdpClient> _boardCastclientUDP;
 };

@@ -13,6 +13,7 @@ from dataclasses import dataclass
 import debugpy
 import os
 import sys
+import message_pb2
 
 @dataclass
 class ParsedMessage:
@@ -68,9 +69,7 @@ class BotSDK:
             while True:
                 data, addr = udp_sock.recvfrom(4096)  # 收 4KB
                 try:
-                    msg_json = json.loads(data.decode("utf-8"))
-                    self.print(f"[Broadcast Received from {addr}] {msg_json}")
-                    msg = self.parse_message(msg_json["message"])
+                    msg = self.parse_message(data)
                     self.message_queue.put(msg)
                 except Exception as e:
                     self.print(f"Error parsing message: {e}")
@@ -109,14 +108,11 @@ class BotSDK:
             self.print(f"[DEBUG] Failed to attach debugger: {e}")
             self.DebugStatus = False 
             
-    def parse_message(self, raw_msg: str) -> ParsedMessage:
-        pattern = r'\[(.*?)\]\s+(.*?)\s+\((.*?)\)\s+(.*)'
-        match = re.match(pattern, raw_msg)
-        if not match:
-            return ParsedMessage(time="", username="", email="", content=raw_msg)
-
-        time, username, email, content = match.groups()
-        return ParsedMessage(time, username, email, content)
+    def parse_message(self, raw_msg: bytes) -> ParsedMessage:
+        msg = message_pb2.Message()
+        msg.ParseFromString(raw_msg)  # 解析二进制
+        return ParsedMessage(msg.DataTime, msg.name, msg.QQNumber, msg.message)
+        
 # === 测试 ===
 if __name__ == "__main__":
     bot = BotSDK()

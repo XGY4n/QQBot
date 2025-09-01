@@ -2,8 +2,10 @@
 #include <string>
 #include "NetWorkClientAdapter.h"
 #include <QMessage.h>
+#include <nlohmann/json.hpp>
+#include "message.pb.h"
 class BoardcastTask
-{
+{ 
 
 public:
 	BoardcastTask();

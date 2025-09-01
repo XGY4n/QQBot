@@ -10,7 +10,6 @@
 
 class QMsgFormatter : public IQMsgFormatter {
 
-
 public:
     QMessage parse(std::string& raw) ;
 

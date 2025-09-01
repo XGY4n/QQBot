@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package Boardcast;
+
+message Message {
+	string name = 1;
+    string QQNumber = 2;
+    string message = 3;
+    string DataTime = 4;
+	string raw = 5;
+}

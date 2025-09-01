@@ -72,7 +72,6 @@ ServiceManager::HttpTaskInfo ServiceManager::CreateHttpTask(const PythonTaskRunn
     httpTask.taskBuildTime = httpTask.lastHeartbeatTime;
     httpTask.callInfo = ServiceTask.callInfo;
     httpTask.taskType = ServiceTask.taskcallback.TaskType == 0 ? Long : Short;
-	httpTask.healthclient = std::make_unique<httplib::Client>("127.0.0.1", httpTask.heartbeatPort);
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(httpTask.heartbeatPort); // Python ¶Ë¿Ú

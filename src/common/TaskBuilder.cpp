@@ -232,7 +232,6 @@ Task TaskBuilder::build(const QMessage rawMessage)
     std::string errMsg;
 
     if (!checkInputFormat(inputMsg, errMsg)) {
-        LOG_WARNING_SELF("formatMessage failed with: " + errMsg);
         task.status = false;
         return task;
     }

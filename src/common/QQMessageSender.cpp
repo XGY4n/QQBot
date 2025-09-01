@@ -173,6 +173,9 @@ void QQMessageSender::handleAtMessage(bool isAtback, const std::string& callInfo
 
 void QQMessageSender::sendMessageAsJson(const std::string& JsonInfo, QMessage callinfo)
 {
+#if _BLOCK == 1
+    return;
+#endif
     std::string task_uuid, status, timestamp, return_type, values;
     if (!ParseJsonInfo(JsonInfo, task_uuid, status, timestamp, return_type, values))
     {

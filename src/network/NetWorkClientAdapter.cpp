@@ -34,6 +34,7 @@ void NetWorkClientAdapter::sendHeartbeatTask(SOCKET& healthclient, int port)
         Reconnect(healthclient, port);
     }
 }
+
 void NetWorkClientAdapter::Reconnect(SOCKET& healthclient, int port)
 {
     int err = WSAGetLastError();
@@ -60,39 +61,19 @@ void NetWorkClientAdapter::Reconnect(SOCKET& healthclient, int port)
         }
         else
         {
-            //LOG_SUCCESS_SELF("connect success");
             healthclient = newSock;
         }
     }
 }
 
-
-void NetWorkClientAdapter::BoardCastMessage(QMessage msg)
+void NetWorkClientAdapter::BoardCastMessage(std::string serialized)
 {
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
-
-    SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
-
-    int broadcastEnable = 1;
-    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&broadcastEnable, sizeof(broadcastEnable));
-
-    sockaddr_in addr{};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(19198);
-    addr.sin_addr.s_addr = inet_addr("255.255.255.255"); // ¹ã²¥µØÖ·
-    nlohmann::json j;
-    j["message"] = multi_Byte_To_Wide_Char2(msg.toString());
-    std::string body = j.dump();
-    sendto(sock, body.c_str(), (int)body.size(), 0,
-        (sockaddr*)&addr, sizeof(addr));
-     
-    closesocket(sock);
-    WSACleanup();
-} 
-
+    _boardCastclientUDP->send(serialized);
+}
 
 NetWorkClientAdapter::NetWorkClientAdapter()
 {
-    _boardCastclient = std::make_unique<httplib::Client>("127.0.0.1", 19198);
+	_boardCastclientUDP = std::make_unique<UdpClient>("255.255.255.255", 19198);
+    _boardCastclientUDP->enableBroadcast();
+
 }

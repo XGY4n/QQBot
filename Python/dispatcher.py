@@ -48,9 +48,8 @@ def find_available_port(min_port: int, max_port: int, exclude_ports: list = None
     raise RuntimeError(f"在 {min_port}-{max_port} 范围内找不到可用端口。")
 
 def main(jsmsg, py_home):
-    write_log("into dispatcher.py main()")
     write_log(jsmsg)
-    write_log("Python" + py_home)
+    write_log("Python Home : " + py_home)
     missing_modules = check_dependencies()
     if missing_modules:
         write_log(f"环境依赖缺失 : {missing_modules}")
