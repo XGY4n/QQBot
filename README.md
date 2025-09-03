@@ -1,6 +1,6 @@
 # QQBot 
 
-使用 C++ 编写的 QQ 机器人项目，支持通过 Python 3.9 进行任务调度与脚本扩展。
+使用 C++ 编写的 QQ 机器人项目，支持通过 Python+Protobuf 进行任务调度与脚本扩展。
 
 ---
 
@@ -25,7 +25,7 @@ pip install -r requirements.txt
 ```bash
 mkdir build
 cd build
-cmake .. -G "Visual Studio 17 2022" -A x64 -DPYTHON_INCLUDE="D:/workspace/Python/Python39/include" -DPYTHON_LIBDIR="D:/workspace/Python/Python39/libs" -DPYTHON_LIBNAME="python39" -DPYTHON_DLL="D:/workspace/Python/Python39/python39.dll"
+cmake .. -G "Visual Studio 17 2022" -A x64 -DPYTHON_INCLUDE="D:/workspace/Python/Python39/include" -DPYTHON_LIBDIR="D:/workspace/Python/Python39/libs" -DPYTHON_LIBNAME="python39" -DPYTHON_DLL="D:/workspace/Python/Python39/python39.dll -DPROTOBUF_PATH="D:/protobuf_path"
 ```
 ### 3. 配置 INI 文件
 推荐编译后将ini模板文件移动到build/ 和 .exe的输出目录下再编辑
