@@ -6,9 +6,9 @@
 #include <TaskBuilder.h>
 
 // QQ 消息发送接口
-class IQQMessageSender {
+class IMessageFeedback {
 public:
-    virtual ~IQQMessageSender() = default;
+    virtual ~IMessageFeedback() = default;
 
     // 文本消息发送
     virtual void SendTextToGroup(const std::string& message) = 0;

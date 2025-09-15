@@ -13,21 +13,16 @@
 template<typename T>
 class Executor {
 public:
-    Executor()
+    Executor() 
     {
         _pyTaskBuilder = std::make_unique<TaskBuilder>();
         _pyTaskrunner = std::make_unique<PythonTaskRunner>();
 		_serviceManager = std::make_unique<ServiceManager>(); 
-        _sender = std::make_unique<QQMessageSender>(_targetGroup);
 		if (!_serviceManager) {
 			LOG_ERROR_SELF("Failed to create ServiceManager instance.");
 			return;
 		}        
-        EventBusInstance::instance().subscribe<HttpCallbackInfo>(
-            [this](const HttpCallbackInfo& event) {
-                LOG_SUCCESS_SELF("send to QQ :" + event.HttpBody);
-                _sender->sendMessageAsJson(event.HttpBody, event.callInfo);//sendMessageAsJson
-            });
+
         EventBusInstance::instance().subscribe<TaskConfigReloadEvent>(
             [this](const TaskConfigReloadEvent& event) {
                 SetupAutoStart();
@@ -92,7 +87,6 @@ public:
     void SetHWDN(HWND target)
     {
         _targetGroup = target;
-        _sender = move(std::make_unique<QQMessageSender>(_targetGroup));
     }
 
 private:
@@ -107,7 +101,6 @@ private:
     std::queue<T> _queue;
     std::condition_variable _cv;
     HWND _targetGroup;
-    std::unique_ptr<IQQMessageSender> _sender = std::make_unique<QQMessageSender>(_targetGroup);
     std::thread _worker;      
     std::atomic<bool> _running{ false }; 
     std::unique_ptr<TaskBuilder> _pyTaskBuilder;

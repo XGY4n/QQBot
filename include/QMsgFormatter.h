@@ -6,9 +6,9 @@
 #include <windows.h>
 #include <UIAutomation.h>
 #include <vector>
-#include "interface/IQMsgFormatter.h"
+#include "interface/IMsgFormatter.h"
 
-class QMsgFormatter : public IQMsgFormatter {
+class QMsgFormatter : public IMsgFormatter {
 
 public:
     QMessage parse(std::string& raw) ;

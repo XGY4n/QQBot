@@ -11,10 +11,11 @@
 #include <nlohmann/json.hpp>
 #include <TaskBuilder.h>
 #include <set>
-#include <interface/IQQMessageSender.h>
+#include <interface/IMessageFeedback.h>
 namespace fs = std::filesystem;
 
-class QQMessageSender :public IQQMessageSender {
+class QQMessageSender :public IMessageFeedback
+{
 public:
     QQMessageSender(HWND Group);
 

@@ -1,6 +1,6 @@
 #include <MessageFetcher.h>
 
-MessageFetcher::MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* windowController)
+MessageFetcher::MessageFetcher(IMsgFormatter* formatter, IUIAWindowController* windowController)
     : _formatter(formatter), _windowController(windowController)
 {
     _automationWindowHandle = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));
@@ -17,8 +17,8 @@ bool MessageFetcher::SetParserMarkSymbol(std::string Symbols)
     return true;
 }
 
-MessageFetcher::MessageFetcher(std::unique_ptr<IQMsgFormatter> formatter, std::unique_ptr <IUIAWindowController> windowController, 
-    std::unique_ptr<IQQMessageExporter> MessageExporterm)
+MessageFetcher::MessageFetcher(std::unique_ptr<IMsgFormatter> formatter, std::unique_ptr <IUIAWindowController> windowController, 
+    std::unique_ptr<IMessageExporter> MessageExporterm)
 	: _formatter(std::move(formatter)), _windowController(std::move(windowController)), _msgExporter(std::move(MessageExporterm))
 {
     _automationWindowHandle = FindWindow(_T("TXGuiFoundation"), _T("消息管理器"));

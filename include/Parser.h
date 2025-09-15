@@ -8,14 +8,14 @@
 #include "QMsgFormatter.h"
 #include "UIAWindowController.h"
 #include "MessageFetcher.h"
-#include <interface/IQQMessageExporter.h>
+#include <interface/IMessageExporter.h>
 #include <functional>
 class Parser 
 {
 	public:
 
 		Parser(//DI
-			std::unique_ptr<IQMsgFormatter> formatter,
+			std::unique_ptr<IMsgFormatter> formatter,
 			std::unique_ptr<IUIAWindowController> windowController,
 			std::unique_ptr<IMessageFetcher> fetcher,
 			std::string Symbol = "#"
@@ -36,7 +36,7 @@ class Parser
 
 	public:
 	private:
-		std::unique_ptr<IQMsgFormatter> _formatter;
+		std::unique_ptr<IMsgFormatter> _formatter;
 		std::unique_ptr<IUIAWindowController> _windowController;
 		std::unique_ptr<IMessageFetcher> _fetcher;
 		std::string _markSymbol;

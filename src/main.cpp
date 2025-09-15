@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     }
 
     if (bot) {
-        bot->run();
+        bot->start();
         delete bot;
     }
 

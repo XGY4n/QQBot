@@ -14,7 +14,7 @@ struct HeartbeatHttpCb
 struct ShutdownEvent {};
 
 
-struct HttpCallbackInfo
+struct PythonCallbackInfo
 {
     std::string HttpBody;
     QMessage callInfo;

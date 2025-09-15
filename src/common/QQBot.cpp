@@ -1,13 +1,11 @@
 #include <QQBot.h>
 
-
 QQBot::QQBot() 
 	: _groupName(""), _mainGroup(0), _msgCenter(0), _symbol(""), _botConfig(nullptr), _pool(4)
 {
 	initialize("./ini/BotSetting.ini");
 	watchParserEventBus();
 	_configWatcherThread = std::thread(&QQBot::watchConfigHotReload, this, "./ini", "BotSetting.ini");
-
 }
 
 QQBot::QQBot(std::string ConfigPath) 
@@ -18,7 +16,6 @@ QQBot::QQBot(std::string ConfigPath)
 	fs::path p(ConfigPath);
 	std::string dir = p.parent_path().string();
 	std::string filename = p.filename().string();
-
 	_configWatcherThread = std::thread(&QQBot::watchConfigHotReload, this, dir, filename);
 }
 
@@ -27,7 +24,6 @@ QQBot::~QQBot()
 	_watchConfigStopFlag = true;
 	if (_configWatcherThread.joinable())
 		_configWatcherThread.join();
-	_parser.reset();
 	_executor.reset();
 	stop();
 }
@@ -42,11 +38,8 @@ void QQBot::watchParserEventBus()
 		[this](const WindowLostEvent& event) {
 			LOG_ERROR_SELF("Window lost from: " + event.componentName);
 			LOG_SUCCESS_SELF(" Async reinitialization task started.");
-			_parser->stop();
-			_parser.reset();
 			waitGroup();
 			_executor->SetHWDN(_mainGroup);
-			setupMessageProcessingPipeline(); 
 			LOG_SUCCESS_SELF("Async reinitialization task completed.");
 		});
 
@@ -111,6 +104,7 @@ bool QQBot::waitGroup()
 			SetForegroundWindow(_mainGroup);
 			std::cout << std::endl;
 			LOG_SUCCESS_SELF("---Bot online---");
+			_sender = std::make_unique<QQMessageSender>(_mainGroup);
 			return true;
 		}
 
@@ -120,18 +114,15 @@ bool QQBot::waitGroup()
 	return false;
 }
 
-void QQBot::run()
+void QQBot::setup()
 {
 	waitGroup();
-	setupMessageProcessingPipeline();
-	setupExecutorPipeline();
 }
 
-void QQBot::stop()
+void QQBot::callbackAction(PythonCallbackInfo& event)
 {
-	LOG_SUCCESS_SELF("Stopping QQBot...");
-	LOG_SUCCESS_SELF("QQBot stopped.");
-	exit(0);
+	LOG_SUCCESS_SELF("send to QQ :" + event.HttpBody);
+	_sender->sendMessageAsJson(event.HttpBody, event.callInfo);
 }
 
 void QQBot::watchConfigHotReload(const std::string& dir, const std::string& filename)
@@ -206,23 +197,4 @@ bool QQBot::readBotConfig()
 	}
 }
 
-void QQBot::setupMessageProcessingPipeline()
-{
-	_parser = ParserFactory::Create(_msgCenter, _symbol);
-	_parser->start();
-	
-}
 
-void QQBot::setupExecutorPipeline()
-{
-	if (_executor)
-	{
-
-		_executor->SetHWDN(_mainGroup);
-		_executor->start();		
-	}
-	else
-	{
-		LOG_WARNING_SELF("Executor already initialized, skipping reinitialization.");
-	}
-}

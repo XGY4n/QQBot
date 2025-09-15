@@ -244,10 +244,10 @@ void ServiceManager::HandleTaskRev(std::string body)
             return;
         }
         ReleaseTask(uuid);
-        EventBusInstance::instance().publish(HttpCallbackInfo{ body, sendBackCopy->second.callInfo });
+        EventBusInstance::instance().publish(PythonCallbackInfo{ body, sendBackCopy->second.callInfo });
         return;
     }  
-    EventBusInstance::instance().publish(HttpCallbackInfo{ body });
+    EventBusInstance::instance().publish(PythonCallbackInfo{ body });
 }   
  
 

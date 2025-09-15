@@ -4,7 +4,7 @@
 #include <vector>
 #include <UIAutomation.h>
 #include <iostream>
-#include <interface/IQQMessageExporter.h>
+#include <interface/IMessageExporter.h>
 #include <deque>
 #include <mutex>
 #include <atlbase.h>
@@ -13,7 +13,7 @@
 
 using ATL::CComPtr;
 
-class UIAQQMessageExporter : public IQQMessageExporter
+class UIAQQMessageExporter : public IMessageExporter
 {
 public:
     UIAQQMessageExporter();

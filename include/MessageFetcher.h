@@ -9,8 +9,8 @@
 class MessageFetcher: public IMessageFetcher 
 {
 public:
-    MessageFetcher(IQMsgFormatter* formatter, IUIAWindowController* windowController);
-    MessageFetcher(std::unique_ptr<IQMsgFormatter> formatter, std::unique_ptr <IUIAWindowController> windowController, std::unique_ptr<IQQMessageExporter> MessageExporterm);
+    MessageFetcher(IMsgFormatter* formatter, IUIAWindowController* windowController);
+    MessageFetcher(std::unique_ptr<IMsgFormatter> formatter, std::unique_ptr <IUIAWindowController> windowController, std::unique_ptr<IMessageExporter> MessageExporterm);
     ~MessageFetcher();
 
     void start();
@@ -28,8 +28,8 @@ private:
     void Refresh();
 
 private:
-    std::unique_ptr<IQQMessageExporter> _msgExporter;
-    std::unique_ptr<IQMsgFormatter> _formatter;
+    std::unique_ptr<IMessageExporter> _msgExporter;
+    std::unique_ptr<IMsgFormatter> _formatter;
     std::unique_ptr<IUIAWindowController> _windowController;
 
     //thread

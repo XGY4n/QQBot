@@ -4,8 +4,8 @@
 #include <sstream>
 #include <QMessage.h>
 
-class IQMsgFormatter {
+class IMsgFormatter {
 public:
-    virtual ~IQMsgFormatter() = default;
+    virtual ~IMsgFormatter() = default;
     virtual QMessage parse(std::string& raw) = 0;
 };

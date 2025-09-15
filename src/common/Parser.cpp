@@ -17,7 +17,7 @@ Parser::Parser(//DI
 
 
 Parser::Parser(
-    std::unique_ptr<IQMsgFormatter> formatter,
+    std::unique_ptr<IMsgFormatter> formatter,
     std::unique_ptr<IUIAWindowController> windowController,
     std::unique_ptr<IMessageFetcher> fetcher,
 	std::string Symbol 
